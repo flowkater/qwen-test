@@ -1,0 +1,292 @@
+{
+  "source_file": "mcat-en-book-toc.md",
+  "type": "book_toc",
+  "query": {
+    "title": "MCAT Biological & Biochemical Foundations of Living Systems",
+    "lang": "en"
+  },
+  "metadata": {
+    "title": "MCAT Biological & Biochemical Foundations of Living Systems",
+    "subtitle": "Kaplan Complete 7-Book Subject Review 2026-2027",
+    "publisher": "Kaplan Test Prep",
+    "published_date": "July 8, 2025",
+    "isbn13_biology": "978-1506297408",
+    "isbn13_biochemistry": "978-1506297385",
+    "language": "English",
+    "pages_biology": 576,
+    "pages_biochemistry": 608
+  },
+  "table_of_contents": {
+    "total_books": 2,
+    "books": [
+      {
+        "title": "BOOK 1: BIOLOGY",
+        "total_chapters": 8,
+        "chapters": [
+          {
+            "title": "Chapter 1: Cell Structure and Function",
+            "depth": 1,
+            "sections": [
+              {
+                "title": "1.1 Prokaryotic Cells vs Eukaryotic Cells",
+                "depth": 2
+              },
+              {
+                "title": "1.2 Plasma Membrane Structure",
+                "depth": 2,
+                "subsections": ["Lipid components", "Protein components", "Fluid mosaic model"]
+              },
+              {
+                "title": "1.3 Cytoskeleton",
+                "depth": 2,
+                "subsections": ["Microfilaments", "Microtubules", "Intermediate filaments"]
+              },
+              {
+                "title": "1.4 Organelles",
+                "depth": 2,
+                "subsections": ["Nucleus", "Mitochondria", "Endoplasmic reticulum", "Golgi apparatus", "Lysosomes", "Peroxisomes"]
+              },
+              {
+                "title": "1.5 Transport Across Membranes",
+                "depth": 2,
+                "subsections": ["Passive transport", "Active transport", "Osmosis", "Exocytosis and endocytosis"]
+              }
+            ]
+          },
+          {
+            "title": "Chapter 2: Metabolism",
+            "depth": 1,
+            "section_count": 8,
+            "section_titles": [
+              "2.1 Principles of Bioenergetics",
+              "2.2 Glycolysis",
+              "2.3 Citric Acid Cycle (Krebs Cycle)",
+              "2.4 Electron Transport Chain",
+              "2.5 Oxidative Phosphorylation",
+              "2.6 Gluconeogenesis and Pentose Phosphate Pathway",
+              "2.7 Fatty Acid Metabolism",
+              "2.8 Amino Acid Metabolism"
+            ]
+          },
+          {
+            "title": "Chapter 3: DNA Structure and Replication",
+            "depth": 1,
+            "section_count": 4,
+            "section_titles": [
+              "3.1 DNA Structure",
+              "3.2 DNA Replication Mechanism",
+              "3.3 DNA Repair Mechanisms",
+              "3.4 Genetic Code"
+            ]
+          },
+          {
+            "title": "Chapter 4: Gene Expression and Regulation",
+            "depth": 1,
+            "section_count": 4,
+            "section_titles": [
+              "4.1 Transcription",
+              "4.2 Translation",
+              "4.3 Control of Gene Expression",
+              "4.4 Recombinant DNA Technology"
+            ]
+          },
+          {
+            "title": "Chapter 5: Mendelian Genetics",
+            "depth": 1,
+            "section_count": 4,
+            "section_titles": [
+              "5.1 Basic Genetic Concepts",
+              "5.2 Meiosis",
+              "5.3 Genetic Analysis Methods",
+              "5.4 Sex-Linked Inheritance"
+            ]
+          },
+          {
+            "title": "Chapter 6: Evolutionary Biology",
+            "depth": 1,
+            "section_count": 4,
+            "section_titles": [
+              "6.1 Natural Selection",
+              "6.2 Speciation",
+              "6.3 Genetic Drift",
+              "6.4 Mutation and Variation"
+            ]
+          },
+          {
+            "title": "Chapter 7: Human Anatomy and Physiology",
+            "depth": 1,
+            "section_count": 10,
+            "section_titles": [
+              "7.1 Circulatory System",
+              "7.2 Respiratory System",
+              "7.3 Digestive System",
+              "7.4 Excretory System",
+              "7.5 Nervous System",
+              "7.6 Endocrine System",
+              "7.7 Muscular System",
+              "7.8 Integumentary System",
+              "7.9 Immune System",
+              "7.10 Reproductive System"
+            ]
+          },
+          {
+            "title": "Chapter 8: Ecology and Environmental Science",
+            "depth": 1,
+            "section_count": 4,
+            "section_titles": [
+              "8.1 Population Ecology",
+              "8.2 Community Ecology",
+              "8.3 Ecosystem Dynamics",
+              "8.4 Energy Flow and Nutrient Cycling"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "BOOK 2: BIOCHEMISTRY",
+        "total_chapters": 8,
+        "chapters": [
+          {
+            "title": "Chapter 1: Amino Acids and Proteins",
+            "depth": 1,
+            "section_count": 5,
+            "section_titles": [
+              "1.1 Amino Acids Overview",
+              "1.2 Peptide Linkages",
+              "1.3 Protein Structure Levels",
+              "1.4 Protein Conformation",
+              "1.5 Separation Techniques"
+            ]
+          },
+          {
+            "title": "Chapter 2: Enzymes and Kinetics",
+            "depth": 1,
+            "section_count": 6,
+            "section_titles": [
+              "2.1 Enzyme Function",
+              "2.2 Active Site Models",
+              "2.3 Enzyme Classification",
+              "2.4 Enzyme Kinetics",
+              "2.5 Enzyme Inhibition",
+              "2.6 Regulatory Enzymes"
+            ]
+          },
+          {
+            "title": "Chapter 3: Carbohydrates",
+            "depth": 1,
+            "section_count": 8,
+            "section_titles": [
+              "3.1 Nomenclature and Classification",
+              "3.2 Absolute Configuration",
+              "3.3 Cyclic Structure of Hexoses",
+              "3.4 Epimers and Anomers",
+              "3.5 Monosaccharides",
+              "3.6 Disaccharides",
+              "3.7 Polysaccharides",
+              "3.8 Glycoside Linkage Hydrolysis"
+            ]
+          },
+          {
+            "title": "Chapter 4: Lipids",
+            "depth": 1,
+            "section_count": 3,
+            "section_titles": [
+              "4.1 Storage Lipids",
+              "4.2 Structural Lipids",
+              "4.3 Signal/Co-factor Lipids"
+            ]
+          },
+          {
+            "title": "Chapter 5: Nucleic Acids",
+            "depth": 1,
+            "section_count": 4,
+            "section_titles": [
+              "5.1 Nucleotides and Nucleosides",
+              "5.2 DNA Structure",
+              "5.3 RNA Structure and Function",
+              "5.4 Other Functions"
+            ]
+          },
+          {
+            "title": "Chapter 6: Metabolic Pathways",
+            "depth": 1,
+            "section_count": 8,
+            "section_titles": [
+              "6.1 Glycolysis",
+              "6.2 Citric Acid Cycle",
+              "6.3 Electron Transport Chain",
+              "6.4 Oxidative Phosphorylation",
+              "6.5 Gluconeogenesis",
+              "6.6 Pentose Phosphate Pathway",
+              "6.7 Fatty Acid Oxidation",
+              "6.8 Protein Metabolism"
+            ]
+          },
+          {
+            "title": "Chapter 7: Hormones and Signaling Pathways",
+            "depth": 1,
+            "section_count": 4,
+            "section_titles": [
+              "7.1 Hormone Classes",
+              "7.2 Hormone Structures and Sources",
+              "7.3 Cellular Mechanisms of Action",
+              "7.4 Integration with Nervous System"
+            ]
+          },
+          {
+            "title": "Chapter 8: Molecular Techniques",
+            "depth": 1,
+            "section_count": 8,
+            "section_titles": [
+              "8.1 Gene Cloning",
+              "8.2 Restriction Enzymes",
+              "8.3 Polymerase Chain Reaction (PCR)",
+              "8.4 Gel Electrophoresis",
+              "8.5 Southern and Northern Blotting",
+              "8.6 DNA Sequencing",
+              "8.7 Stem Cells",
+              "8.8 Biotechnology Applications"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "verification_rules": {
+    "toc_depth_check": {
+      "description": "TOC must have at least 3 depth levels (chapter > section > subsection)",
+      "max_depth_observed": 3,
+      "example_path": "BOOK 1: BIOLOGY > Chapter 1: Cell Structure and Function > 1.2 Plasma Membrane Structure > Lipid components"
+    },
+    "metadata_exact_match": {
+      "fields": ["publisher", "isbn13_biology", "isbn13_biochemistry"],
+      "publisher": "Kaplan Test Prep",
+      "isbn13_biology": "978-1506297408",
+      "isbn13_biochemistry": "978-1506297385"
+    },
+    "toc_structure_check": {
+      "biology_chapters": 8,
+      "biochemistry_chapters": 8,
+      "biology_chapter_titles_must_contain": [
+        "Cell Structure and Function",
+        "Metabolism",
+        "DNA Structure and Replication",
+        "Gene Expression and Regulation",
+        "Mendelian Genetics",
+        "Evolutionary Biology",
+        "Human Anatomy and Physiology",
+        "Ecology and Environmental Science"
+      ],
+      "biochemistry_chapter_titles_must_contain": [
+        "Amino Acids and Proteins",
+        "Enzymes and Kinetics",
+        "Carbohydrates",
+        "Lipids",
+        "Nucleic Acids",
+        "Metabolic Pathways",
+        "Hormones and Signaling Pathways",
+        "Molecular Techniques"
+      ]
+    }
+  }
+}

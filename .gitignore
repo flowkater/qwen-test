@@ -1,2 +1,3 @@
 # OMX (oh-my-codex) state/log artifacts
 .omx/
+.env

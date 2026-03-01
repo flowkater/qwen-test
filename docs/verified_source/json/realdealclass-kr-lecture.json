@@ -1,0 +1,171 @@
+{
+  "source_file": "realdealclass-kr-lecture.md",
+  "type": "lecture",
+  "query": {
+    "title": "리얼딜 클라쓰 ZERO TO ONE",
+    "platform": "RealDealClass",
+    "url": "https://realdealclass.com/product/zero-to-one/",
+    "lang": "ko"
+  },
+  "metadata": {
+    "title": "리얼딜 클라쓰 ZERO TO ONE",
+    "description": "왕초보부터 초중급까지의 영어 기초 문법 강의",
+    "platform": "RealDealClass",
+    "difficulty": "(왕)초급 - 초중급",
+    "total_lectures": "약 50~56강 + 특강",
+    "duration": "6개월",
+    "materials": "PDF 교재, 명품 특강실"
+  },
+  "curriculum": {
+    "total_chapters": 7,
+    "has_special_lessons": true,
+    "sections": [
+      {
+        "title": "OT. 오리엔테이션",
+        "lectures": [
+          {
+            "title": "문장을 볼 줄 모르면 평생 초보를 못 벗어나는 이유",
+            "duration": null
+          }
+        ]
+      },
+      {
+        "title": "Unit 1-4: 개념 학습",
+        "lectures": [
+          {"number": 1, "title": "문법의 개념", "duration": "37:23"},
+          {"number": 2, "title": "품사의 개념", "duration": "41:20"},
+          {"number": 3, "title": "역할의 개념", "duration": "35:53"},
+          {"number": 4, "title": "자동사와 타동사", "duration": "25:16"}
+        ]
+      },
+      {
+        "title": "Ch 01. 문장의 형태",
+        "lectures": [
+          {"number": 5, "title": "1형식 문장", "duration": "21:21"},
+          {"number": 6, "title": "2형식 문장", "duration": "24:07"},
+          {"number": 7, "title": "3형식 문장", "duration": "25:14"},
+          {"number": 8, "title": "4형식 문장", "duration": "25:13"},
+          {"number": 9, "title": "5형식 문장", "duration": "30:09"}
+        ]
+      },
+      {
+        "title": "Ch 02. 동사의 종류",
+        "lectures": [
+          {"number": 10, "title": "영어 문장의 기본기", "duration": "17:33"},
+          {"number": 11, "title": "세 가지 동사의 종류", "duration": "33:00"},
+          {"number": 12, "title": "부정문 만들기", "duration": "26:03"},
+          {"number": 13, "title": "의문문 만들기", "duration": "33:39"}
+        ]
+      },
+      {
+        "title": "Ch 03. 동사의 시제",
+        "lectures": [
+          {"number": 14, "title": "현재 시제", "duration": "24:56"},
+          {"number": 15, "title": "과거 시제", "duration": "15:17"},
+          {"number": 16, "title": "미래 시제", "duration": "25:11"},
+          {"number": 17, "title": "진행형", "duration": "19:54"},
+          {"number": 18, "title": "완료형 1", "duration": "29:53"},
+          {"number": 19, "title": "완료형 2", "duration": "26:00"},
+          {"number": 20, "title": "조동사 1", "duration": "27:08"},
+          {"number": 21, "title": "조동사 2", "duration": "30:02"}
+        ]
+      },
+      {
+        "title": "Ch 04. 수동태",
+        "lectures": [
+          {"number": 22, "title": "수동태 1", "duration": "28:22"},
+          {"number": 23, "title": "수동태 2", "duration": "28:20"},
+          {"number": 24, "title": "수동태 3", "duration": "23:30"},
+          {"number": 25, "title": "수동태 4", "duration": "22:35"}
+        ]
+      },
+      {
+        "title": "Ch 05. 준동사 & 가짜 동사",
+        "lectures": [
+          {"number": 26, "title": "동명사 Ving", "duration": "30:59"},
+          {"number": 27, "title": "to-V 1", "duration": "42:20"},
+          {"number": 28, "title": "to-V 2", "duration": "32:35"},
+          {"number": 29, "title": "to-V 3", "duration": "24:15"},
+          {"number": 30, "title": "Ving와 to-V 정리", "duration": "34:50"},
+          {"number": 31, "title": "분사 ving와 p.p", "duration": "39:45"},
+          {"number": 32, "title": "종합연습 1", "duration": "18:40"}
+        ]
+      },
+      {
+        "title": "Ch 06. 긴 문장 만드는 원리",
+        "lectures": [
+          {"number": 33, "title": "명사가 길어질 때 – WH", "duration": "33:20"},
+          {"number": 34, "title": "명사가 길어질 때 – that", "duration": "33:35"},
+          {"number": 35, "title": "명사가 길어질 때 – whether & if", "duration": "24:10"},
+          {"number": 36, "title": "형용사가 길어질 때 – wh- and that (1)", "duration": "28:30"},
+          {"number": 37, "title": "형용사가 길어질 때 – wh- and that (2)", "duration": "32:05"},
+          {"number": 38, "title": "문장 붙이기 – 접속사", "duration": "31:20"},
+          {"number": 39, "title": "문장 붙이기 – 분사구문", "duration": "32:50"},
+          {"number": 40, "title": "종합연습 2", "duration": "16:00"}
+        ]
+      },
+      {
+        "title": "Ch 07. 풍부한 문장 완성하기",
+        "lectures": [
+          {"number": 41, "title": "비교표현 – 차이를 비교하기", "duration": "34:00"},
+          {"number": 42, "title": "비교표현 – 극단을 표현하기", "duration": "28:18"},
+          {"number": 43, "title": "비교표현 – 비슷함 비교하기", "duration": "26:44"},
+          {"number": 44, "title": "부정표현 – 다양하게 부정하기", "duration": "33:24"},
+          {"number": 45, "title": "더 사람답게 말하기 – 생략, 삽입, 도치", "duration": "46:37"}
+        ]
+      },
+      {
+        "title": "Special Lessons (스페셜 특강)",
+        "lectures": [
+          {"title": "명사의 세계 – a, an, the, -s, 한정사, 관사, 수량사, 소유격, 고유명사", "duration": null},
+          {"title": "명사를 센다는 것과 세지 않는다는 것", "duration": null},
+          {"title": "전치사 개념 때려잡기", "duration": null},
+          {"title": "전치사 실전 체화연습", "duration": null},
+          {"title": "한번에 이해되는 가정법", "duration": null}
+        ]
+      }
+    ]
+  },
+  "verification_rules": {
+    "metadata_exact_match": {
+      "fields": ["platform", "difficulty", "duration"],
+      "platform": "RealDealClass",
+      "difficulty": "(왕)초급 - 초중급",
+      "duration": "6개월"
+    },
+    "curriculum_structure_check": {
+      "total_chapters": 7,
+      "has_ot": true,
+      "has_unit_1_4": true,
+      "has_special_lessons": true,
+      "special_lesson_count": 5,
+      "chapter_titles_must_contain": [
+        "문장의 형태",
+        "동사의 종류",
+        "동사의 시제",
+        "수동태",
+        "준동사 & 가짜 동사",
+        "긴 문장 만드는 원리",
+        "풍부한 문장 완성하기"
+      ]
+    },
+    "lecture_title_exact_match": {
+      "description": "Key lecture titles must match exactly",
+      "samples": [
+        {"number": 1, "title": "문법의 개념"},
+        {"number": 11, "title": "세 가지 동사의 종류"},
+        {"number": 27, "title": "to-V 1"},
+        {"number": 45, "title": "더 사람답게 말하기 – 생략, 삽입, 도치"}
+      ]
+    },
+    "duration_exact_match": {
+      "description": "Lecture durations must match exactly",
+      "samples": [
+        {"number": 1, "duration": "37:23"},
+        {"number": 11, "duration": "33:00"},
+        {"number": 27, "duration": "42:20"},
+        {"number": 45, "duration": "46:37"}
+      ]
+    }
+  }
+}
