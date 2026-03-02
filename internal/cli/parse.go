@@ -13,7 +13,8 @@ var ErrHelpRequested = errors.New("help requested")
 
 func ParseArgs(args []string, stderr io.Writer) (domain.BookQuery, error) {
 	query := domain.BookQuery{
-		Model: domain.DefaultModel,
+		Model:  domain.DefaultModel,
+		Format: domain.DefaultOutputFormat,
 	}
 	positionals := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
@@ -39,6 +40,12 @@ func ParseArgs(args []string, stderr io.Writer) (domain.BookQuery, error) {
 			query.Lang = strings.TrimSpace(args[i])
 		case "--full", "-f":
 			query.FullMode = true
+		case "--format":
+			i++
+			if i >= len(args) {
+				return domain.BookQuery{}, fmt.Errorf("missing value for --format")
+			}
+			query.Format = strings.ToLower(strings.TrimSpace(args[i]))
 		case "--api-key":
 			i++
 			if i >= len(args) {
@@ -98,8 +105,9 @@ Flags:
   --author, -a              author
   --lang, -l                ko|en|ja|zh-tw
   --full, -f                collect metadata+toc+review+courses+similar
+  --format                  output format (json|text, default json)
   --api-key                 override OPENROUTER_API_KEY
-  --model, -m               model (default qwen/qwen3.5-flash)
+  --model, -m               model (default qwen/qwen3.5-flash-02-23)
   --output, -o              output path
   --batch, -b               batch text file (one title per line)
   --no-cache                skip cache read but still write refreshed cache

@@ -15,6 +15,12 @@ var allowedLang = map[string]struct{}{
 	"zh-tw": {},
 }
 
+var allowedFormat = map[string]struct{}{
+	"":     {},
+	"json": {},
+	"text": {},
+}
+
 func ValidateQuery(q BookQuery) error {
 	title := strings.TrimSpace(q.Title)
 	isbn := strings.TrimSpace(q.ISBN13)
@@ -32,6 +38,10 @@ func ValidateQuery(q BookQuery) error {
 	lang := strings.ToLower(strings.TrimSpace(q.Lang))
 	if _, ok := allowedLang[lang]; !ok {
 		return ErrInvalidLang
+	}
+	format := strings.ToLower(strings.TrimSpace(q.Format))
+	if _, ok := allowedFormat[format]; !ok {
+		return ErrInvalidFormat
 	}
 	if q.BatchPath != "" && batch == "" {
 		return ErrInvalidBatchPath
@@ -62,7 +72,12 @@ func ResolveOutputPath(q BookQuery, nowLocalDate string) string {
 	if base == "" {
 		base = "bookinfo"
 	}
-	return base + "_" + nowLocalDate + ".json"
+	ext := ".json"
+	switch strings.ToLower(strings.TrimSpace(q.Format)) {
+	case "text":
+		ext = ".txt"
+	}
+	return base + "_" + nowLocalDate + ext
 }
 
 func sanitizeFilename(input string) string {

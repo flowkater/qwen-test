@@ -154,3 +154,25 @@ func TestRunnerBookNotFoundMapping(t *testing.T) {
 		t.Fatalf("expected book not found guidance, got: %s", stderr.String())
 	}
 }
+
+func TestRunnerNoBlankSummaryOnEarlyFailure(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	r := &Runner{
+		Service: fakeService{
+			processOneFn: func(_ context.Context, _ domain.BookQuery) (app.ProcessResult, error) {
+				return app.ProcessResult{}, fmt.Errorf("openrouter non-retryable status 400")
+			},
+		},
+		Env:    map[string]string{"OPENROUTER_API_KEY": "x"},
+		Stdout: stdout,
+		Stderr: stderr,
+	}
+	code := r.Run(context.Background(), []string{"Clean Code"})
+	if code != 1 {
+		t.Fatalf("expected error exit")
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout should stay empty on early failure, got: %q", stdout.String())
+	}
+}

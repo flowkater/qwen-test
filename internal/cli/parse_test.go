@@ -18,6 +18,9 @@ func TestParseArgsContracts(t *testing.T) {
 		if q.Model == "" {
 			t.Fatalf("default model must be set")
 		}
+		if q.Format != "json" {
+			t.Fatalf("default format must be json, got %q", q.Format)
+		}
 	})
 
 	t.Run("isbn wins as preferred identifier", func(t *testing.T) {
@@ -56,11 +59,21 @@ func TestParseArgsContracts(t *testing.T) {
 			t.Fatalf("output mismatch: %s", q.Output)
 		}
 	})
+
+	t.Run("format text", func(t *testing.T) {
+		q, err := ParseArgs([]string{"Clean Code", "--format", "text"}, &bytes.Buffer{})
+		if err != nil {
+			t.Fatalf("parse: %v", err)
+		}
+		if q.Format != "text" {
+			t.Fatalf("format mismatch: %q", q.Format)
+		}
+	})
 }
 
 func TestHelpIncludesRequiredFlags(t *testing.T) {
 	help := HelpText()
-	for _, f := range []string{"--isbn", "--full", "--lang", "--no-cache"} {
+	for _, f := range []string{"--isbn", "--full", "--lang", "--no-cache", "--format"} {
 		if !bytes.Contains([]byte(help), []byte(f)) {
 			t.Fatalf("help missing flag %s", f)
 		}

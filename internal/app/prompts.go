@@ -8,24 +8,34 @@ import (
 )
 
 func BuildTOCPrompt(q domain.BookQuery) string {
-	return commonLead(q) + "\nReturn detailed table_of_contents as recursive children nodes. " +
+	return commonLead(q) + "\nReturn ONLY valid JSON array (no markdown, no explanation): " +
+		`[{"title":{"original":"","korean":""},"depth":1,"children":[]}]` +
+		"\nReturn detailed table_of_contents as recursive children nodes. " +
 		"Do not impose artificial depth limits. Provide original + korean titles for every node."
 }
 
 func BuildMetadataPrompt(q domain.BookQuery) string {
-	return commonLead(q) + "\nReturn metadata fields: title(original/korean), author, publisher, published_date, isbn13, pages, language, edition, selection_note."
+	return commonLead(q) + "\nReturn ONLY valid JSON object (no markdown, no explanation): " +
+		`{"title":{"original":"","korean":""},"author":"","publisher":"","published_date":"","isbn13":"","pages":0,"language":"","edition":"","selection_note":""}` +
+		"\nReturn metadata fields: title(original/korean), author, publisher, published_date, isbn13, pages, language, edition, selection_note."
 }
 
 func BuildReviewPrompt(q domain.BookQuery) string {
-	return commonLead(q) + "\nReturn review with rating, summary.pros, summary.cons, recommended_level, prerequisites."
+	return commonLead(q) + "\nReturn ONLY valid JSON object (no markdown, no explanation): " +
+		`{"rating":0,"summary":{"pros":[],"cons":[]},"recommended_level":"","prerequisites":[]}` +
+		"\nReturn review with rating, summary.pros, summary.cons, recommended_level, prerequisites."
 }
 
 func BuildCoursesPrompt(q domain.BookQuery) string {
-	return commonLead(q) + "\nReturn related courses with title, platform, instructor, curriculum(array), rating, price, url."
+	return commonLead(q) + "\nReturn ONLY valid JSON array (no markdown, no explanation): " +
+		`[{"title":"","platform":"","instructor":"","curriculum":[],"rating":0,"price":"","url":""}]` +
+		"\nReturn related courses with title, platform, instructor, curriculum(array), rating, price, url."
 }
 
 func BuildSimilarPrompt(q domain.BookQuery) string {
-	return commonLead(q) + "\nReturn 3-5 similar books including title(original/korean), author, brief_description, difficulty_comparison."
+	return commonLead(q) + "\nReturn ONLY valid JSON array (no markdown, no explanation): " +
+		`[{"title":{"original":"","korean":""},"author":"","brief_description":"","difficulty_comparison":""}]` +
+		"\nReturn 3-5 similar books including title(original/korean), author, brief_description, difficulty_comparison."
 }
 
 func commonLead(q domain.BookQuery) string {

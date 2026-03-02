@@ -7,6 +7,7 @@ var (
 	ErrInvalidTitle     = fmt.Errorf("invalid title")
 	ErrInvalidISBN      = fmt.Errorf("invalid isbn")
 	ErrInvalidLang      = fmt.Errorf("invalid lang: allowed values are ko, en, ja, zh-tw")
+	ErrInvalidFormat    = fmt.Errorf("invalid format: allowed values are json, text")
 	ErrInvalidBatchPath = fmt.Errorf("invalid batch path")
 	ErrInvalidOutput    = fmt.Errorf("invalid output path")
 	ErrMissingAPIKey    = fmt.Errorf("missing api key: set OPENROUTER_API_KEY or pass --api-key")

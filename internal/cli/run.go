@@ -73,7 +73,9 @@ func (r *Runner) Run(ctx context.Context, args []string) int {
 
 func (r *Runner) runSingle(ctx context.Context, query domain.BookQuery) int {
 	res, err := r.Service.ProcessOne(ctx, query)
-	r.printSummary(res.Info, res.OutputPath, query.FullMode)
+	if shouldPrintSummary(res.Info, res.OutputPath, query.FullMode) {
+		r.printSummary(res.Info, res.OutputPath, query.FullMode)
+	}
 	if err != nil {
 		fmt.Fprintf(r.Stderr, "error: %v\n", mapError(err))
 		return 1
@@ -122,6 +124,22 @@ func (r *Runner) printSummary(info domain.BookInfo, outputPath string, full bool
 	}
 }
 
+func shouldPrintSummary(info domain.BookInfo, outputPath string, full bool) bool {
+	if strings.TrimSpace(info.Book.Title.Original) != "" || strings.TrimSpace(info.Book.Author) != "" {
+		return true
+	}
+	if len(info.TableOfContents) > 0 {
+		return true
+	}
+	if full && info.Review.Rating > 0 {
+		return true
+	}
+	if strings.TrimSpace(outputPath) != "" {
+		return true
+	}
+	return false
+}
+
 func mapError(err error) error {
 	switch {
 	case errorsIs(err, domain.ErrMissingAPIKey):
@@ -130,6 +148,8 @@ func mapError(err error) error {
 		return fmt.Errorf("제목 또는 --isbn 중 하나는 필수입니다")
 	case errorsIs(err, domain.ErrInvalidLang):
 		return fmt.Errorf("허용값: ko, en, ja, zh-tw")
+	case errorsIs(err, domain.ErrInvalidFormat):
+		return fmt.Errorf("허용값: json, text")
 	case errorsIs(err, domain.ErrBookNotFound):
 		return fmt.Errorf("책을 찾지 못했습니다. 제목/ISBN을 확인하거나 --author를 추가해 주세요")
 	default:

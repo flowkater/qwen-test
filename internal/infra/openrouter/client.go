@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -67,11 +69,17 @@ func (c *Client) Collect(ctx context.Context, model, apiKey, prompt string) ([]b
 
 	resp, err := client.Do(req)
 	if err != nil {
+		if isTimeoutError(err) {
+			return nil, &domain.RetryableError{Code: 408, Err: err}
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
+		if isTimeoutError(err) {
+			return nil, &domain.RetryableError{Code: 408, Err: err}
+		}
 		return nil, err
 	}
 
@@ -82,7 +90,11 @@ func (c *Client) Collect(ctx context.Context, model, apiKey, prompt string) ([]b
 		return nil, domain.ErrBookNotFound
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("openrouter non-retryable status %d", resp.StatusCode)
+		detail := extractProviderErrorDetail(raw)
+		if detail == "" {
+			return nil, fmt.Errorf("openrouter non-retryable status %d", resp.StatusCode)
+		}
+		return nil, fmt.Errorf("openrouter non-retryable status %d: %s", resp.StatusCode, detail)
 	}
 
 	var parsed struct {
@@ -104,4 +116,39 @@ func (c *Client) Collect(ctx context.Context, model, apiKey, prompt string) ([]b
 		return nil, domain.ErrBookNotFound
 	}
 	return []byte(content), nil
+}
+
+func extractProviderErrorDetail(raw []byte) string {
+	type responseError struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	var parsed responseError
+	if err := json.Unmarshal(raw, &parsed); err == nil {
+		msg := strings.TrimSpace(parsed.Error.Message)
+		if msg != "" {
+			return msg
+		}
+	}
+	text := strings.TrimSpace(string(raw))
+	if len(text) > 200 {
+		return text[:200] + "..."
+	}
+	return text
+}
+
+func isTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "context deadline exceeded") || strings.Contains(msg, "client.timeout")
 }

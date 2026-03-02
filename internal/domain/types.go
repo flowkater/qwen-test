@@ -5,13 +5,15 @@ import (
 	"time"
 )
 
-const DefaultModel = "qwen/qwen3.5-flash"
+const DefaultModel = "qwen/qwen3.5-flash-02-23"
+const DefaultOutputFormat = "json"
 
 type BookQuery struct {
 	Title     string
 	ISBN13    string
 	Author    string
 	Lang      string
+	Format    string
 	Model     string
 	Output    string
 	NoCache   bool

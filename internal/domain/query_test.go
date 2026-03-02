@@ -18,6 +18,12 @@ func TestValidateQueryRules(t *testing.T) {
 			t.Fatalf("expected invalid lang, got %v", err)
 		}
 	})
+	t.Run("invalid format", func(t *testing.T) {
+		err := ValidateQuery(BookQuery{Title: "Clean Code", Format: "yaml"})
+		if err == nil || err.Error() != ErrInvalidFormat.Error() {
+			t.Fatalf("expected invalid format, got %v", err)
+		}
+	})
 	t.Run("batch bypasses title requirement", func(t *testing.T) {
 		err := ValidateQuery(BookQuery{BatchPath: "books.txt"})
 		if err != nil {
@@ -56,6 +62,11 @@ func TestResolveOutputPath(t *testing.T) {
 	path := ResolveOutputPath(q, "20260301")
 	if path != "Clean-Code_20260301.json" {
 		t.Fatalf("unexpected path: %s", path)
+	}
+	q = BookQuery{Title: "Clean Code", Format: "text"}
+	path = ResolveOutputPath(q, "20260301")
+	if path != "Clean-Code_20260301.txt" {
+		t.Fatalf("unexpected text path: %s", path)
 	}
 	q = BookQuery{ISBN13: "978-0132350884"}
 	path = ResolveOutputPath(q, "20260301")

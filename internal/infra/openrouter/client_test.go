@@ -2,6 +2,7 @@ package openrouter
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -90,5 +91,64 @@ func TestClientMapsNotFoundMessageContent(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), domain.ErrBookNotFound.Error()) {
 		t.Fatalf("expected ErrBookNotFound, got %v", err)
+	}
+}
+
+type timeoutHTTPClient struct{}
+
+func (timeoutHTTPClient) Do(*http.Request) (*http.Response, error) {
+	return nil, context.DeadlineExceeded
+}
+
+type errorReadCloser struct{}
+
+func (errorReadCloser) Read([]byte) (int, error) { return 0, context.DeadlineExceeded }
+func (errorReadCloser) Close() error             { return nil }
+
+type readTimeoutHTTPClient struct{}
+
+func (readTimeoutHTTPClient) Do(*http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: 200,
+		Header:     http.Header{"Content-Type": []string{"application/json"}},
+		Body:       errorReadCloser{},
+	}, nil
+}
+
+func TestClientTimeoutErrorsAreRetryable(t *testing.T) {
+	t.Run("do timeout", func(t *testing.T) {
+		client := NewClient(timeoutHTTPClient{})
+		_, err := client.Collect(context.Background(), domain.DefaultModel, "token", "prompt")
+		if err == nil {
+			t.Fatalf("expected timeout error")
+		}
+		var re *domain.RetryableError
+		if !domain.AsRetryable(err, &re) {
+			t.Fatalf("timeout should be retryable: %v", err)
+		}
+	})
+
+	t.Run("read timeout", func(t *testing.T) {
+		client := NewClient(readTimeoutHTTPClient{})
+		_, err := client.Collect(context.Background(), domain.DefaultModel, "token", "prompt")
+		if err == nil {
+			t.Fatalf("expected timeout error")
+		}
+		var re *domain.RetryableError
+		if !domain.AsRetryable(err, &re) {
+			t.Fatalf("read timeout should be retryable: %v", err)
+		}
+	})
+}
+
+func TestIsTimeoutError(t *testing.T) {
+	if !isTimeoutError(context.DeadlineExceeded) {
+		t.Fatalf("context deadline should be timeout")
+	}
+	if !isTimeoutError(errors.New("Client.Timeout exceeded while awaiting headers")) {
+		t.Fatalf("Client.Timeout string should be timeout")
+	}
+	if isTimeoutError(errors.New("plain error")) {
+		t.Fatalf("plain error should not be timeout")
 	}
 }

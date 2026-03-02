@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/flowkater/qwen/bookinfo/internal/app"
@@ -16,16 +18,28 @@ import (
 )
 
 func main() {
-	httpClient := &http.Client{Timeout: 30 * time.Second}
+	httpClient := &http.Client{Timeout: resolveHTTPTimeout()}
 	collector := openrouter.NewCollector(openrouter.NewClient(httpClient))
 	service := &app.Service{
 		Collector: collector,
 		Validator: validator.NewJSONValidator(),
 		Cache:     cache.NewFileCache(defaultCacheDir()),
-		Writer:    output.NewJSONWriter(),
+		Writer:    output.NewFormatWriter(),
 	}
 	runner := &cli.Runner{Service: service}
 	os.Exit(runner.Run(context.Background(), os.Args[1:]))
+}
+
+func resolveHTTPTimeout() time.Duration {
+	raw := strings.TrimSpace(os.Getenv("BOOKINFO_HTTP_TIMEOUT_SEC"))
+	if raw == "" {
+		return 90 * time.Second
+	}
+	sec, err := strconv.Atoi(raw)
+	if err != nil || sec <= 0 {
+		return 90 * time.Second
+	}
+	return time.Duration(sec) * time.Second
 }
 
 func defaultCacheDir() string {
