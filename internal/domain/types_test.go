@@ -90,3 +90,46 @@ func TestCollectMetadataCollectedAtUTC(t *testing.T) {
 		t.Fatalf("collected_at must be UTC RFC3339, got %s", got)
 	}
 }
+
+func TestNormalizeAuthor(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{
+			name:  "parenthesized english preferred",
+			input: "로버트 C. 마틴 (Robert C. Martin)",
+			want:  "Robert C. Martin",
+		},
+		{
+			name:  "plain preserved",
+			input: "Robert C. Martin",
+			want:  "Robert C. Martin",
+		},
+		{
+			name:  "empty parenthesis ignored",
+			input: "홍길동 ()",
+			want:  "홍길동 ()",
+		},
+		{
+			name:  "trimmed",
+			input: "  Robert C. Martin  ",
+			want:  "Robert C. Martin",
+		},
+		{
+			name:  "empty input",
+			input: "   ",
+			want:  "",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := NormalizeAuthor(tc.input)
+			if got != tc.want {
+				t.Fatalf("NormalizeAuthor(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
+	}
+}

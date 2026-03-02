@@ -16,21 +16,21 @@ func NewCollector(client *Client) *Collector {
 }
 
 func (c *Collector) CollectMetadata(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.BuildMetadataPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildMetadataPrompt(q))
 }
 
 func (c *Collector) CollectTOC(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.BuildTOCPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildTOCPrompt(q))
 }
 
 func (c *Collector) CollectReview(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.BuildReviewPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildReviewPrompt(q))
 }
 
 func (c *Collector) CollectCourses(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.BuildCoursesPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildCoursesPrompt(q))
 }
 
 func (c *Collector) CollectSimilarBooks(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.BuildSimilarPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildSimilarPrompt(q))
 }

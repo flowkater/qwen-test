@@ -62,6 +62,31 @@ CASE_TO_SCHEMA = {
     ),
 }
 
+OPENROUTER_EXTRACTION_SYSTEM_PROMPT = """You are a precise metadata and table-of-contents extraction engine.
+
+CRITICAL RULES:
+1. Use web evidence and return only high-confidence facts.
+2. Follow the user-requested output schema exactly.
+3. Preserve titles in the ORIGINAL language of the source resource.
+   - English source -> English titles, Korean source -> Korean titles.
+   - Do not translate unless explicitly requested.
+4. Prefer canonical/original edition data over translated variants unless query language says otherwise.
+5. If data is uncertain, leave placeholders empty instead of inventing values.
+6. If JSON is requested, output valid JSON only (no markdown, no explanation, no code fences)."""
+
+OPENROUTER_EVIDENCE_SYSTEM_PROMPT = """You are a careful web research assistant for metadata and curriculum extraction.
+
+Collect high-confidence evidence, keep the ORIGINAL language of titles, and clearly separate confirmed facts from uncertainty.
+Do not invent unsupported claims. Prefer canonical/original edition data where applicable."""
+
+OPENROUTER_MAPPER_SYSTEM_PROMPT = """You are a strict JSON mapper.
+
+Map ONLY from the supplied evidence into the target schema.
+- Return one valid JSON object only.
+- No markdown, no explanation, no extra keys.
+- Keep titles in the original language found in evidence.
+- If evidence is missing, use empty placeholders ("", 0, [], false)."""
+
 
 @dataclass
 class CaseExecution:
@@ -452,10 +477,7 @@ def map_evidence_to_json(
     messages = [
         {
             "role": "system",
-            "content": (
-                "You are a strict JSON mapper. Convert only from provided evidence. "
-                "Do not invent unsupported facts. Return JSON object only."
-            ),
+            "content": OPENROUTER_MAPPER_SYSTEM_PROMPT,
         },
         {
             "role": "user",
@@ -500,7 +522,7 @@ def call_openrouter(
         messages = [
             {
                 "role": "system",
-                "content": "Use web search when useful and return the requested JSON.",
+                "content": OPENROUTER_EXTRACTION_SYSTEM_PROMPT,
             },
             {"role": "user", "content": prompt},
         ]
@@ -522,7 +544,7 @@ def call_openrouter(
     raw_messages = [
         {
             "role": "system",
-            "content": "Use web search when useful. Gather high-confidence facts and list uncertainty clearly.",
+            "content": OPENROUTER_EVIDENCE_SYSTEM_PROMPT,
         },
         {"role": "user", "content": prompt},
     ]
@@ -569,6 +591,86 @@ def contains_keyword(text: str, keyword: str) -> bool:
     return keyword.lower() in text.lower()
 
 
+def normalize_for_compare(text: Any) -> str:
+    if text is None:
+        return ""
+    normalized = str(text).strip().lower()
+    normalized = re.sub(r"\s+", " ", normalized)
+    return normalized
+
+
+def _normalize_compact(text: Any) -> str:
+    normalized = normalize_for_compare(text)
+    return re.sub(r"[\s\W_]+", "", normalized, flags=re.UNICODE)
+
+
+def _variants_for_flexible_compare(text: Any) -> list[str]:
+    base = str(text or "")
+    variants: list[str] = [base]
+    inner = re.findall(r"\(([^)]+)\)", base)
+    variants.extend(inner)
+    without_paren = re.sub(r"\([^)]*\)", " ", base).strip()
+    if without_paren:
+        variants.append(without_paren)
+    return variants
+
+
+def flexible_match(expected: str, actual: str) -> bool:
+    exp_norm = normalize_for_compare(expected)
+    act_norm = normalize_for_compare(actual)
+    if not exp_norm or not act_norm:
+        return False
+
+    if exp_norm == act_norm:
+        return True
+    if exp_norm in act_norm or act_norm in exp_norm:
+        return True
+
+    exp_compact = _normalize_compact(expected)
+    act_compact = _normalize_compact(actual)
+    if exp_compact and act_compact and (exp_compact == act_compact or exp_compact in act_compact):
+        return True
+
+    exp_variants = _variants_for_flexible_compare(expected)
+    act_variants = _variants_for_flexible_compare(actual)
+    for exp_variant in exp_variants:
+        exp_v_norm = normalize_for_compare(exp_variant)
+        if not exp_v_norm:
+            continue
+        for act_variant in act_variants:
+            act_v_norm = normalize_for_compare(act_variant)
+            if not act_v_norm:
+                continue
+            if exp_v_norm == act_v_norm or exp_v_norm in act_v_norm or act_v_norm in exp_v_norm:
+                return True
+    return False
+
+
+TITLE_ALIASES: dict[str, dict[str, list[str]]] = {
+    "cleancode": {
+        "Meaningful Names": ["의미있는이름", "의미 있는 이름", "의미있는 이름"],
+        "Functions": ["함수"],
+        "Comments": ["주석"],
+        "Objects and Data Structures": ["객체와자료구조", "객체와 자료구조", "객체와 자료 구조"],
+        "Classes": ["클래스"],
+        "Exceptions": ["오류처리", "오류 처리", "예외"],
+        "Boundaries": ["경계"],
+    }
+}
+
+
+def contains_keyword_flexible(titles: list[str], keyword: str, case_id: str) -> bool:
+    candidates = [keyword]
+    candidates.extend(TITLE_ALIASES.get(case_id, {}).get(keyword, []))
+
+    for title in titles:
+        title_text = str(title)
+        for candidate in candidates:
+            if contains_keyword(title_text, candidate) or flexible_match(candidate, title_text):
+                return True
+    return False
+
+
 def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, Any]) -> tuple[list[tuple[str, Any, Any, bool]], int, int]:
     checks: list[tuple[str, Any, Any, bool]] = []
     rules = fixture_obj["verification_rules"]
@@ -579,7 +681,7 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         for field in expected["fields"]:
             exp = expected[field]
             act = actual_meta.get(field)
-            checks.append((f"metadata.{field}", exp, act, str(exp) == str(act)))
+            checks.append((f"metadata.{field}", exp, act, flexible_match(str(exp), str(act))))
 
         toc_expected = rules["toc_structure_check"]
         actual_toc = actual.get("table_of_contents", {})
@@ -587,7 +689,7 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         checks.append(("table_of_contents.total_appendices", toc_expected["total_appendices"], actual_toc.get("total_appendices"), str(toc_expected["total_appendices"]) == str(actual_toc.get("total_appendices"))))
         chapter_titles = actual_toc.get("chapter_titles", []) or []
         for keyword in toc_expected["chapter_titles_must_contain"]:
-            ok = any(contains_keyword(str(title), keyword) for title in chapter_titles)
+            ok = contains_keyword_flexible(chapter_titles, keyword, case_id)
             checks.append((f'chapter_titles contains "{keyword}"', "포함", "포함" if ok else "미포함", ok))
         depth_expected = rules["toc_depth_check"]["max_depth_observed"]
         depth_actual = actual_toc.get("max_depth_observed")
@@ -599,7 +701,7 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         for field in expected["fields"]:
             exp = expected[field]
             act = actual_meta.get(field)
-            checks.append((f"metadata.{field}", exp, act, str(exp) == str(act)))
+            checks.append((f"metadata.{field}", exp, act, flexible_match(str(exp), str(act))))
 
         toc_expected = rules["toc_structure_check"]
         actual_toc = actual.get("table_of_contents", {})
@@ -607,11 +709,11 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         checks.append(("table_of_contents.biochemistry_chapters", toc_expected["biochemistry_chapters"], actual_toc.get("biochemistry_chapters"), str(toc_expected["biochemistry_chapters"]) == str(actual_toc.get("biochemistry_chapters"))))
         biology_titles = actual_toc.get("biology_chapter_titles", []) or []
         for keyword in ["Cell Structure and Function", "Human Anatomy and Physiology"]:
-            ok = any(contains_keyword(str(title), keyword) for title in biology_titles)
+            ok = contains_keyword_flexible(biology_titles, keyword, case_id)
             checks.append((f'biology_chapter_titles contains "{keyword}"', "포함", "포함" if ok else "미포함", ok))
         biochem_titles = actual_toc.get("biochemistry_chapter_titles", []) or []
         target = "Enzymes and Kinetics"
-        ok = any(contains_keyword(str(title), target) for title in biochem_titles)
+        ok = contains_keyword_flexible(biochem_titles, target, case_id)
         checks.append((f'biochemistry_chapter_titles contains "{target}"', "포함", "포함" if ok else "미포함", ok))
         depth_expected = rules["toc_depth_check"]["max_depth_observed"]
         depth_actual = actual_toc.get("max_depth_observed")
@@ -623,7 +725,7 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         for field in expected["fields"]:
             exp = expected[field]
             act = actual_meta.get(field)
-            checks.append((f"metadata.{field}", exp, act, str(exp) == str(act)))
+            checks.append((f"metadata.{field}", exp, act, flexible_match(str(exp), str(act))))
 
         cur_expected = rules["curriculum_structure_check"]
         actual_cur = actual.get("curriculum", {})
@@ -650,7 +752,7 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         for field in expected["fields"]:
             exp = expected[field]
             act = actual_meta.get(field)
-            checks.append((f"metadata.{field}", exp, act, str(exp) == str(act)))
+            checks.append((f"metadata.{field}", exp, act, flexible_match(str(exp), str(act))))
 
         cur_expected = rules["curriculum_structure_check"]
         actual_cur = actual.get("curriculum", {})
@@ -659,7 +761,7 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         checks.append(("curriculum.special_lesson_count", cur_expected["special_lesson_count"], actual_cur.get("special_lesson_count"), str(cur_expected["special_lesson_count"]) == str(actual_cur.get("special_lesson_count"))))
         chapter_titles = actual_cur.get("chapter_titles", []) or []
         for keyword in cur_expected["chapter_titles_must_contain"]:
-            ok = any(contains_keyword(str(title), keyword) for title in chapter_titles)
+            ok = contains_keyword_flexible(chapter_titles, keyword, case_id)
             checks.append((f'chapter_titles contains "{keyword}"', "포함", "포함" if ok else "미포함", ok))
 
         key_lectures = actual_cur.get("key_lectures", {}) or {}

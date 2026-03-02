@@ -34,30 +34,65 @@ func NewClient(httpClient HTTPClient) *Client {
 }
 
 type RequestPayload struct {
-	Model    string `json:"model"`
-	Messages []struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	} `json:"messages"`
+	Model          string          `json:"model"`
+	Messages       []Message       `json:"messages"`
+	Temperature    *float64        `json:"temperature,omitempty"`
+	MaxTokens      int             `json:"max_tokens,omitempty"`
+	ResponseFormat *ResponseFormat `json:"response_format,omitempty"`
 }
 
-func (c *Client) Collect(ctx context.Context, model, apiKey, prompt string) ([]byte, error) {
+type Message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type ResponseFormat struct {
+	Type string `json:"type"`
+}
+
+func (c *Client) Collect(ctx context.Context, model, apiKey, systemPrompt, userPrompt string) ([]byte, error) {
 	if model == "" {
 		model = domain.DefaultModel
 	}
-	payload := RequestPayload{Model: model}
-	payload.Messages = append(payload.Messages, struct {
-		Role    string `json:"role"`
-		Content string `json:"content"`
-	}{Role: "user", Content: prompt})
 
+	temp := 0.1
+	payload := RequestPayload{
+		Model:          model,
+		Temperature:    &temp,
+		MaxTokens:      4000,
+		ResponseFormat: &ResponseFormat{Type: "json_object"},
+		Messages: []Message{
+			{Role: "system", Content: systemPrompt},
+			{Role: "user", Content: userPrompt},
+		},
+	}
+
+	content, err := c.collectContent(ctx, apiKey, payload)
+	if err != nil {
+		if shouldRetryWithoutResponseFormat(err) {
+			payload.ResponseFormat = nil
+			content, err = c.collectContent(ctx, apiKey, payload)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	lower := strings.ToLower(content)
+	if strings.Contains(lower, "not found") || strings.Contains(lower, "찾을 수 없습니다") {
+		return nil, domain.ErrBookNotFound
+	}
+	return extractJSON(content)
+}
+
+func (c *Client) collectContent(ctx context.Context, apiKey string, payload RequestPayload) (string, error) {
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL, bytes.NewReader(body))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
@@ -70,31 +105,31 @@ func (c *Client) Collect(ctx context.Context, model, apiKey, prompt string) ([]b
 	resp, err := client.Do(req)
 	if err != nil {
 		if isTimeoutError(err) {
-			return nil, &domain.RetryableError{Code: 408, Err: err}
+			return "", &domain.RetryableError{Code: 408, Err: err}
 		}
-		return nil, err
+		return "", err
 	}
 	defer resp.Body.Close()
+
 	raw, err := io.ReadAll(resp.Body)
 	if err != nil {
 		if isTimeoutError(err) {
-			return nil, &domain.RetryableError{Code: 408, Err: err}
+			return "", &domain.RetryableError{Code: 408, Err: err}
 		}
-		return nil, err
+		return "", err
 	}
 
 	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
-		return nil, &domain.RetryableError{Code: resp.StatusCode, Err: fmt.Errorf("openrouter status %d", resp.StatusCode)}
+		return "", &domain.RetryableError{Code: resp.StatusCode, Err: fmt.Errorf("openrouter status %d", resp.StatusCode)}
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, domain.ErrBookNotFound
+		return "", domain.ErrBookNotFound
 	}
 	if resp.StatusCode >= 400 {
-		detail := extractProviderErrorDetail(raw)
-		if detail == "" {
-			return nil, fmt.Errorf("openrouter non-retryable status %d", resp.StatusCode)
+		return "", &providerStatusError{
+			Code:   resp.StatusCode,
+			Detail: extractProviderErrorDetail(raw),
 		}
-		return nil, fmt.Errorf("openrouter non-retryable status %d: %s", resp.StatusCode, detail)
 	}
 
 	var parsed struct {
@@ -105,17 +140,158 @@ func (c *Client) Collect(ctx context.Context, model, apiKey, prompt string) ([]b
 		} `json:"choices"`
 	}
 	if err := json.Unmarshal(raw, &parsed); err != nil {
-		return nil, fmt.Errorf("response decode: %w", err)
+		return "", fmt.Errorf("response decode: %w", err)
 	}
 	if len(parsed.Choices) == 0 {
-		return nil, fmt.Errorf("response decode: empty choices")
+		return "", fmt.Errorf("response decode: empty choices")
 	}
-	content := parsed.Choices[0].Message.Content
-	lower := strings.ToLower(content)
-	if strings.Contains(lower, "not found") || strings.Contains(lower, "찾을 수 없습니다") {
-		return nil, domain.ErrBookNotFound
+	return parsed.Choices[0].Message.Content, nil
+}
+
+type providerStatusError struct {
+	Code   int
+	Detail string
+}
+
+func (e *providerStatusError) Error() string {
+	if strings.TrimSpace(e.Detail) == "" {
+		return fmt.Sprintf("openrouter non-retryable status %d", e.Code)
 	}
-	return []byte(content), nil
+	return fmt.Sprintf("openrouter non-retryable status %d: %s", e.Code, e.Detail)
+}
+
+func shouldRetryWithoutResponseFormat(err error) bool {
+	var statusErr *providerStatusError
+	if !errors.As(err, &statusErr) || statusErr.Code != http.StatusBadRequest {
+		return false
+	}
+
+	detail := strings.ToLower(statusErr.Detail)
+	if !strings.Contains(detail, "response_format") {
+		return false
+	}
+
+	return strings.Contains(detail, "unsupported") ||
+		strings.Contains(detail, "not support") ||
+		strings.Contains(detail, "invalid")
+}
+
+func extractJSON(content string) ([]byte, error) {
+	trimmed := strings.TrimSpace(content)
+	if trimmed == "" {
+		return nil, fmt.Errorf("response is not valid JSON")
+	}
+	if json.Valid([]byte(trimmed)) {
+		return []byte(trimmed), nil
+	}
+
+	candidates := []string{trimmed}
+	if fenced, ok := stripFencedContent(trimmed); ok {
+		candidates = append([]string{fenced}, candidates...)
+	}
+
+	seen := make(map[string]struct{}, len(candidates))
+	for _, candidate := range candidates {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		if _, ok := seen[candidate]; ok {
+			continue
+		}
+		seen[candidate] = struct{}{}
+		if json.Valid([]byte(candidate)) {
+			return []byte(candidate), nil
+		}
+		if extracted, ok := extractFirstJSONObjectOrArray(candidate); ok {
+			return []byte(extracted), nil
+		}
+	}
+	return nil, fmt.Errorf("response is not valid JSON")
+}
+
+func stripFencedContent(content string) (string, bool) {
+	start := strings.Index(content, "```")
+	if start < 0 {
+		return "", false
+	}
+	rest := content[start+3:]
+	if newline := strings.Index(rest, "\n"); newline >= 0 {
+		rest = rest[newline+1:]
+	}
+	end := strings.Index(rest, "```")
+	if end < 0 {
+		return "", false
+	}
+	inner := strings.TrimSpace(rest[:end])
+	if inner == "" {
+		return "", false
+	}
+	return inner, true
+}
+
+func extractFirstJSONObjectOrArray(content string) (string, bool) {
+	for i := 0; i < len(content); i++ {
+		if content[i] != '{' && content[i] != '[' {
+			continue
+		}
+		if end, ok := findJSONBoundary(content, i); ok {
+			candidate := strings.TrimSpace(content[i:end])
+			if json.Valid([]byte(candidate)) {
+				return candidate, true
+			}
+		}
+	}
+	return "", false
+}
+
+func findJSONBoundary(content string, start int) (int, bool) {
+	stack := make([]byte, 0, 8)
+	inString := false
+	escaped := false
+
+	for i := start; i < len(content); i++ {
+		ch := content[i]
+
+		if inString {
+			if escaped {
+				escaped = false
+				continue
+			}
+			switch ch {
+			case '\\':
+				escaped = true
+			case '"':
+				inString = false
+			}
+			continue
+		}
+
+		switch ch {
+		case '"':
+			inString = true
+		case '{', '[':
+			stack = append(stack, ch)
+		case '}':
+			if len(stack) == 0 || stack[len(stack)-1] != '{' {
+				return 0, false
+			}
+			stack = stack[:len(stack)-1]
+			if len(stack) == 0 {
+				return i + 1, true
+			}
+		case ']':
+			if len(stack) == 0 || stack[len(stack)-1] != '[' {
+				return 0, false
+			}
+			stack = stack[:len(stack)-1]
+			if len(stack) == 0 {
+				return i + 1, true
+			}
+		}
+	}
+
+	return 0, false
 }
 
 func extractProviderErrorDetail(raw []byte) string {

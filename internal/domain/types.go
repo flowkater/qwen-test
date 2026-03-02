@@ -2,6 +2,7 @@ package domain
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 )
 
@@ -80,6 +81,26 @@ type BookMetadata struct {
 	Language      string         `json:"language"`
 	Edition       string         `json:"edition"`
 	SelectionNote string         `json:"selection_note"`
+}
+
+// NormalizeAuthor extracts parenthesized text when present and non-empty.
+// Example: "로버트 C. 마틴 (Robert C. Martin)" -> "Robert C. Martin".
+func NormalizeAuthor(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return ""
+	}
+
+	if start := strings.Index(trimmed, "("); start >= 0 {
+		if end := strings.Index(trimmed[start+1:], ")"); end >= 0 {
+			inner := strings.TrimSpace(trimmed[start+1 : start+1+end])
+			if inner != "" {
+				return inner
+			}
+		}
+	}
+
+	return trimmed
 }
 
 type LocalizedTitle struct {

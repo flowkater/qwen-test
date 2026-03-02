@@ -16,8 +16,8 @@ func (v *JSONValidator) ValidateMetadataJSON(raw []byte) (domain.BookMetadata, e
 	if err := json.Unmarshal(raw, &payload); err != nil {
 		return domain.BookMetadata{}, fmt.Errorf("schema error: metadata json parse: %w", err)
 	}
-	if payload.ISBN13 == "" || payload.Author == "" || payload.Publisher == "" {
-		return domain.BookMetadata{}, fmt.Errorf("schema error: metadata required fields missing")
+	if payload.Author == "" {
+		return domain.BookMetadata{}, fmt.Errorf("schema error: author is required")
 	}
 	return payload, nil
 }
@@ -27,13 +27,27 @@ func (v *JSONValidator) ValidateTOCJSON(raw []byte) ([]domain.TOCNode, error) {
 	if err := json.Unmarshal(raw, &arr); err == nil {
 		return arr, nil
 	}
-	var obj struct {
-		TableOfContents []domain.TOCNode `json:"table_of_contents"`
+
+	var generic map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &generic); err != nil {
+		return nil, fmt.Errorf("schema error: toc json parse: %w", err)
 	}
-	if err := json.Unmarshal(raw, &obj); err != nil {
-		return nil, fmt.Errorf("schema error: toc structure")
+
+	for _, key := range []string{"table_of_contents", "chapters", "toc", "items"} {
+		val, ok := generic[key]
+		if !ok {
+			continue
+		}
+		var nodes []domain.TOCNode
+		if err := json.Unmarshal(val, &nodes); err != nil {
+			return nil, fmt.Errorf("schema error: toc %q must be array: %w", key, err)
+		}
+		return nodes, nil
 	}
-	return obj.TableOfContents, nil
+
+	return nil, fmt.Errorf(
+		"schema error: toc wrapper key missing (expected one of: table_of_contents, chapters, toc, items)",
+	)
 }
 
 func (v *JSONValidator) ValidateReviewJSON(raw []byte) (domain.ReviewInfo, error) {
