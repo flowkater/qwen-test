@@ -98,8 +98,8 @@ func normalizeTOC(nodes []TOCNode) []TOCNode {
 
 func validateTOCTree(nodes []TOCNode) error {
 	for _, n := range nodes {
-		if n.Title.Original == "" || n.Title.Korean == "" {
-			return fmt.Errorf("toc title must include original and korean")
+		if n.Title.Original == "" {
+			return fmt.Errorf("toc title must include original")
 		}
 		for _, c := range n.Children {
 			if c.Depth <= n.Depth {

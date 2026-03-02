@@ -92,7 +92,22 @@ func (c *Client) Collect(ctx context.Context, model, apiKey, systemPrompt, userP
 		},
 	}
 
-	content, err := c.collectContent(ctx, apiKey, payload)
+	var content string
+	var err error
+	for attempt := 0; attempt < 3; attempt++ {
+		content, err = c.collectContent(ctx, apiKey, payload)
+		if err == nil {
+			break
+		}
+		if !strings.Contains(err.Error(), "no message output found") {
+			return nil, err
+		}
+		// DashScope sometimes returns incomplete responses (no message output).
+		// Retry up to 3 times before giving up.
+		if attempt < 2 {
+			time.Sleep(time.Duration(attempt+1) * time.Second)
+		}
+	}
 	if err != nil {
 		return nil, err
 	}
