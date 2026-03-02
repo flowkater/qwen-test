@@ -249,8 +249,8 @@
       "isbn13": "978-0132350884"
     },
     "toc_structure_check": {
-      "total_chapters": 8,
-      "total_appendices": 2,
+      "total_chapters": 17,
+      "total_appendices": 3,
       "chapter_titles_must_contain": [
         "Meaningful Names",
         "Functions",

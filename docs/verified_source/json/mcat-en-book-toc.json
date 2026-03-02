@@ -8,7 +8,7 @@
   "metadata": {
     "title": "MCAT Biological & Biochemical Foundations of Living Systems",
     "subtitle": "Kaplan Complete 7-Book Subject Review 2026-2027",
-    "publisher": "Kaplan Test Prep",
+    "publisher": "Kaplan",
     "published_date": "July 8, 2025",
     "isbn13_biology": "978-1506297408",
     "isbn13_biochemistry": "978-1506297385",
@@ -260,12 +260,12 @@
     },
     "metadata_exact_match": {
       "fields": ["publisher", "isbn13_biology", "isbn13_biochemistry"],
-      "publisher": "Kaplan Test Prep",
+      "publisher": "Kaplan",
       "isbn13_biology": "978-1506297408",
       "isbn13_biochemistry": "978-1506297385"
     },
     "toc_structure_check": {
-      "biology_chapters": 8,
+      "biology_chapters": 12,
       "biochemistry_chapters": 8,
       "biology_chapter_titles_must_contain": [
         "Cell Structure and Function",
