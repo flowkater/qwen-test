@@ -1,0 +1,507 @@
+{
+  "model": "qwen3.5-flash",
+  "results": [
+    {
+      "case_id": "cleancode",
+      "ok": true,
+      "elapsed": 173.912269115448,
+      "parsed": {
+        "metadata": {
+          "author": "Robert C. Martin",
+          "publisher": "Addison-Wesley Professional",
+          "isbn13": "9780132350884"
+        },
+        "table_of_contents": {
+          "total_chapters": 17,
+          "total_appendices": 3,
+          "chapter_titles": [
+            "Clean Code",
+            "Meaningful Names",
+            "Functions",
+            "Comments",
+            "Formatting",
+            "Objects and Data Structures",
+            "Error Handling",
+            "Boundaries",
+            "Unit Tests",
+            "Classes",
+            "Systems",
+            "Emergence",
+            "Concurrency",
+            "Successive Refinement",
+            "JUnit Internals",
+            "Refactoring SerialDate",
+            "Smells and Heuristics"
+          ],
+          "max_depth_observed": 3
+        }
+      },
+      "response_text": "\n</think>\n\n{\n  \"metadata\": {\n    \"author\": \"Robert C. Martin\",\n    \"publisher\": \"Addison-Wesley Professional\",\n    \"isbn13\": \"9780132350884\"\n  },\n  \"table_of_contents\": {\n    \"total_chapters\": 17,\n    \"total_appendices\": 3,\n    \"chapter_titles\": [\n      \"Clean Code\",\n      \"Meaningful Names\",\n      \"Functions\",\n      \"Comments\",\n      \"Formatting\",\n      \"Objects and Data Structures\",\n      \"Error Handling\",\n      \"Boundaries\",\n      \"Unit Tests\",\n      \"Classes\",\n      \"Systems\",\n      \"Emergence\",\n      \"Concurrency\",\n      \"Successive Refinement\",\n      \"JUnit Internals\",\n      \"Refactoring SerialDate\",\n      \"Smells and Heuristics\"\n    ],\n    \"max_depth_observed\": 3\n  }\n}",
+      "searches": 2,
+      "extracts": 6,
+      "usage": {
+        "input_tokens": 304606,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 15737,
+        "output_tokens_details": {
+          "reasoning_tokens": 14444
+        },
+        "total_tokens": 320343,
+        "x_details": [
+          {
+            "input_tokens": 304606,
+            "output_tokens": 15737,
+            "output_tokens_details": {
+              "reasoning_tokens": 14444
+            },
+            "plugins": {
+              "web_extractor": {
+                "count": 6
+              },
+              "web_search": {
+                "count": 2
+              }
+            },
+            "total_tokens": 320343,
+            "x_billing_type": "response_api"
+          }
+        ],
+        "x_tools": {
+          "web_extractor": {
+            "count": 6
+          },
+          "web_search": {
+            "count": 2
+          }
+        }
+      },
+      "checks": [
+        [
+          "metadata.author",
+          "Robert C. Martin",
+          "Robert C. Martin",
+          true
+        ],
+        [
+          "metadata.publisher",
+          "Addison-Wesley Professional",
+          "Addison-Wesley Professional",
+          true
+        ],
+        [
+          "metadata.isbn13",
+          "978-0132350884",
+          "9780132350884",
+          true
+        ],
+        [
+          "total_chapters",
+          "17",
+          "17",
+          true
+        ],
+        [
+          "total_appendices",
+          "3",
+          "3",
+          true
+        ],
+        [
+          "\"Meaningful Names\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Functions\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Comments\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Objects and Data Structures\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Classes\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Exceptions\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Boundaries\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "max_depth",
+          ">=3",
+          "3",
+          true
+        ]
+      ],
+      "passed": 13,
+      "total": 13
+    },
+    {
+      "case_id": "mcat",
+      "ok": true,
+      "elapsed": 191.48424410820007,
+      "parsed": {
+        "metadata": {
+          "publisher": "Kaplan Test Prep",
+          "isbn13_biology": "9781506297408",
+          "isbn13_biochemistry": "9781506297385"
+        },
+        "table_of_contents": {
+          "biology_chapters": 12,
+          "biochemistry_chapters": 12,
+          "biology_chapter_titles": [
+            "Chapter 1: The Cell",
+            "Chapter 2: Reproduction",
+            "Chapter 3: Embryogenesis and Development",
+            "Chapter 4: The Nervous System",
+            "Chapter 5: The Endocrine System",
+            "Chapter 6: The Respiratory System",
+            "Chapter 7: The Cardiovascular System",
+            "Chapter 8: The Immune System",
+            "Chapter 9: The Digestive System",
+            "Chapter 10: Homeostasis",
+            "Chapter 11: The Musculoskeletal System",
+            "Chapter 12: Genetics and Evolution"
+          ],
+          "biochemistry_chapter_titles": [
+            "Chapter 1: Amino Acids, Peptides, and Proteins",
+            "Chapter 2: Enzymes",
+            "Chapter 3: Nonenzymatic Protein Function and Protein Analysis",
+            "Chapter 4: Carbohydrate Structure and Function",
+            "Chapter 5: Lipid Structure and Function",
+            "Chapter 6: DNA and Biotechnology",
+            "Chapter 7: RNA and the Genetic Code",
+            "Chapter 8: Biological Membranes",
+            "Chapter 9: Carbohydrate Metabolism I: Glycolysis, Glycogen, Gluconeogenesis, and the Pentose Phosphate Pathway",
+            "Chapter 10: Carbohydrate Metabolism II: Aerobic Respiration",
+            "Chapter 11: Lipid and Amino Acid Metabolism",
+            "Chapter 12: Bioenergetics and Regulation of Metabolism"
+          ],
+          "max_depth_observed": 1
+        }
+      },
+      "response_text": "{\n  \"metadata\": {\n    \"publisher\": \"Kaplan Test Prep\",\n    \"isbn13_biology\": \"9781506297408\",\n    \"isbn13_biochemistry\": \"9781506297385\"\n  },\n  \"table_of_contents\": {\n    \"biology_chapters\": 12,\n    \"biochemistry_chapters\": 12,\n    \"biology_chapter_titles\": [\n      \"Chapter 1: The Cell\",\n      \"Chapter 2: Reproduction\",\n      \"Chapter 3: Embryogenesis and Development\",\n      \"Chapter 4: The Nervous System\",\n      \"Chapter 5: The Endocrine System\",\n      \"Chapter 6: The Respiratory System\",\n      \"Chapter 7: The Cardiovascular System\",\n      \"Chapter 8: The Immune System\",\n      \"Chapter 9: The Digestive System\",\n      \"Chapter 10: Homeostasis\",\n      \"Chapter 11: The Musculoskeletal System\",\n      \"Chapter 12: Genetics and Evolution\"\n    ],\n    \"biochemistry_chapter_titles\": [\n      \"Chapter 1: Amino Acids, Peptides, and Proteins\",\n      \"Chapter 2: Enzymes\",\n      \"Chapter 3: Nonenzymatic Protein Function and Protein Analysis\",\n      \"Chapter 4: Carbohydrate Structure and Function\",\n      \"Chapter 5: Lipid Structure and Function\",\n      \"Chapter 6: DNA and Biotechnology\",\n      \"Chapter 7: RNA and the Genetic Code\",\n      \"Chapter 8: Biological Membranes\",\n      \"Chapter 9: Carbohydrate Metabolism I: Glycolysis, Glycogen, Gluconeogenesis, and the Pentose Phosphate Pathway\",\n      \"Chapter 10: Carbohydrate Metabolism II: Aerobic Respiration\",\n      \"Chapter 11: Lipid and Amino Acid Metabolism\",\n      \"Chapter 12: Bioenergetics and Regulation of Metabolism\"\n    ],\n    \"max_depth_observed\": 1\n  }\n}",
+      "searches": 9,
+      "extracts": 6,
+      "usage": {
+        "input_tokens": 504884,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 3490,
+        "output_tokens_details": {
+          "reasoning_tokens": 874
+        },
+        "total_tokens": 508374,
+        "x_details": [
+          {
+            "input_tokens": 504884,
+            "output_tokens": 3490,
+            "output_tokens_details": {
+              "reasoning_tokens": 874
+            },
+            "plugins": {
+              "web_extractor": {
+                "count": 6
+              },
+              "web_search": {
+                "count": 9
+              }
+            },
+            "total_tokens": 508374,
+            "x_billing_type": "response_api"
+          }
+        ],
+        "x_tools": {
+          "web_extractor": {
+            "count": 6
+          },
+          "web_search": {
+            "count": 9
+          }
+        }
+      },
+      "checks": [
+        [
+          "metadata.publisher",
+          "Kaplan",
+          "Kaplan Test Prep",
+          true
+        ],
+        [
+          "metadata.isbn13_biology",
+          "978-1506297408",
+          "9781506297408",
+          true
+        ],
+        [
+          "metadata.isbn13_biochemistry",
+          "978-1506297385",
+          "9781506297385",
+          true
+        ],
+        [
+          "bio_chapters",
+          "12",
+          "12",
+          true
+        ],
+        [
+          "biochem_chapters",
+          "8",
+          "12",
+          false
+        ],
+        [
+          "bio \"Cell Structure and Functi\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "bio \"Human Anatomy and Physiol\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "biochem \"Enzymes\"",
+          "포함",
+          "포함",
+          true
+        ]
+      ],
+      "passed": 7,
+      "total": 8
+    },
+    {
+      "case_id": "inflearn",
+      "ok": true,
+      "elapsed": 62.376099824905396,
+      "parsed": {
+        "metadata": {
+          "instructor": "mindlantern",
+          "platform": "Inflearn",
+          "rating": 4.9,
+          "total_lectures": 24
+        },
+        "curriculum": {
+          "total_sections": 4,
+          "section_titles": [
+            "Why learn system design?",
+            "4 key goals of system design",
+            "Main system components and trade-offs",
+            "Designing and explaining my own architecture"
+          ],
+          "section_lecture_counts": [
+            4,
+            6,
+            9,
+            5
+          ],
+          "key_lectures": {
+            "3.3": {
+              "title": "API Gateway & Load Balancer & Service Discovery",
+              "duration": "16:01"
+            },
+            "3.7": {
+              "title": "Message Queue & Event Broker",
+              "duration": "32:12"
+            }
+          }
+        }
+      },
+      "response_text": "{\n  \"metadata\": {\n    \"instructor\": \"mindlantern\",\n    \"platform\": \"Inflearn\",\n    \"rating\": 4.9,\n    \"total_lectures\": 24\n  },\n  \"curriculum\": {\n    \"total_sections\": 4,\n    \"section_titles\": [\n      \"Why learn system design?\",\n      \"4 key goals of system design\",\n      \"Main system components and trade-offs\",\n      \"Designing and explaining my own architecture\"\n    ],\n    \"section_lecture_counts\": [\n      4,\n      6,\n      9,\n      5\n    ],\n    \"key_lectures\": {\n      \"3.3\": {\n        \"title\": \"API Gateway & Load Balancer & Service Discovery\",\n        \"duration\": \"16:01\"\n      },\n      \"3.7\": {\n        \"title\": \"Message Queue & Event Broker\",\n        \"duration\": \"32:12\"\n      }\n    }\n  }\n}",
+      "searches": 0,
+      "extracts": 2,
+      "usage": {
+        "input_tokens": 31809,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 4958,
+        "output_tokens_details": {
+          "reasoning_tokens": 4520
+        },
+        "total_tokens": 36767,
+        "x_details": [
+          {
+            "input_tokens": 31809,
+            "output_tokens": 4958,
+            "output_tokens_details": {
+              "reasoning_tokens": 4520
+            },
+            "plugins": {
+              "web_extractor": {
+                "count": 2
+              }
+            },
+            "total_tokens": 36767,
+            "x_billing_type": "response_api"
+          }
+        ],
+        "x_tools": {
+          "web_extractor": {
+            "count": 2
+          }
+        }
+      },
+      "checks": [
+        [
+          "metadata.instructor",
+          "mindlantern",
+          "mindlantern",
+          true
+        ],
+        [
+          "metadata.platform",
+          "Inflearn",
+          "Inflearn",
+          true
+        ],
+        [
+          "metadata.rating",
+          "4.9",
+          "4.9",
+          true
+        ],
+        [
+          "metadata.total_lectures",
+          "24",
+          "24",
+          true
+        ],
+        [
+          "total_sections",
+          "4",
+          "4",
+          true
+        ],
+        [
+          "sec \"Why Learn System Design\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "sec \"4 Key Goals of System Des\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "sec \"Main System Components an\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "sec \"Designing and Explaining \"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "lec[3.3].title",
+          "",
+          "API Gateway & Load Balancer & Service Discovery",
+          true
+        ],
+        [
+          "lec[3.3].duration",
+          "",
+          "16:01",
+          true
+        ],
+        [
+          "lec[3.7].title",
+          "",
+          "Message Queue & Event Broker",
+          true
+        ],
+        [
+          "lec[3.7].duration",
+          "",
+          "32:12",
+          true
+        ]
+      ],
+      "passed": 13,
+      "total": 13
+    },
+    {
+      "case_id": "realdeal",
+      "ok": true,
+      "elapsed": 43.389182806015015,
+      "parsed": null,
+      "response_text": "",
+      "searches": 1,
+      "extracts": 1,
+      "usage": {
+        "input_tokens": 16641,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 529,
+        "output_tokens_details": {
+          "reasoning_tokens": 366
+        },
+        "total_tokens": 17170,
+        "x_details": [
+          {
+            "input_tokens": 16641,
+            "output_tokens": 529,
+            "output_tokens_details": {
+              "reasoning_tokens": 366
+            },
+            "plugins": {
+              "web_extractor": {
+                "count": 1
+              },
+              "web_search": {
+                "count": 1
+              }
+            },
+            "total_tokens": 17170,
+            "x_billing_type": "response_api"
+          }
+        ],
+        "x_tools": {
+          "web_extractor": {
+            "count": 1
+          },
+          "web_search": {
+            "count": 1
+          }
+        }
+      },
+      "checks": [],
+      "passed": 0,
+      "total": 0
+    }
+  ]
+}
