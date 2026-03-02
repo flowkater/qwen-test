@@ -49,7 +49,7 @@ func TestRunnerSingleSummaryAndErrors(t *testing.T) {
 				}, nil
 			},
 		},
-		Env:    map[string]string{"OPENROUTER_API_KEY": "x"},
+		Env:    map[string]string{"DASHSCOPE_API_KEY": "x"},
 		Stdout: stdout,
 		Stderr: stderr,
 	}
@@ -77,7 +77,7 @@ func TestRunnerBatchOutput(t *testing.T) {
 				}, nil
 			},
 		},
-		Env:    map[string]string{"OPENROUTER_API_KEY": "x"},
+		Env:    map[string]string{"DASHSCOPE_API_KEY": "x"},
 		Stdout: stdout,
 		Stderr: stderr,
 	}
@@ -110,7 +110,7 @@ func TestRunnerMissingAPIKey(t *testing.T) {
 	if code != 1 {
 		t.Fatalf("expected missing api key error")
 	}
-	if !bytes.Contains(stderr.Bytes(), []byte("OPENROUTER_API_KEY")) {
+	if !bytes.Contains(stderr.Bytes(), []byte("DASHSCOPE_API_KEY")) {
 		t.Fatalf("expected api key guidance message, got: %s", stderr.String())
 	}
 }
@@ -142,7 +142,7 @@ func TestRunnerBookNotFoundMapping(t *testing.T) {
 				return app.ProcessResult{}, domain.ErrBookNotFound
 			},
 		},
-		Env:    map[string]string{"OPENROUTER_API_KEY": "x"},
+		Env:    map[string]string{"DASHSCOPE_API_KEY": "x"},
 		Stdout: stdout,
 		Stderr: stderr,
 	}
@@ -164,7 +164,7 @@ func TestRunnerNoBlankSummaryOnEarlyFailure(t *testing.T) {
 				return app.ProcessResult{}, fmt.Errorf("openrouter non-retryable status 400")
 			},
 		},
-		Env:    map[string]string{"OPENROUTER_API_KEY": "x"},
+		Env:    map[string]string{"DASHSCOPE_API_KEY": "x"},
 		Stdout: stdout,
 		Stderr: stderr,
 	}

@@ -15,6 +15,11 @@ import (
 	"github.com/flowkater/qwen/bookinfo/internal/domain"
 )
 
+// dashscope response helper
+func dashscopeOK(text string) string {
+	return `{"output":[{"type":"message","content":[{"type":"output_text","text":` + text + `}]}]}`
+}
+
 func TestClientPayloadIncludesSystemUserAndSamplingParams(t *testing.T) {
 	var authHeader string
 	var captured RequestPayload
@@ -24,7 +29,7 @@ func TestClientPayloadIncludesSystemUserAndSamplingParams(t *testing.T) {
 			t.Fatalf("decode payload: %v", err)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"choices":[{"message":{"content":"{\"ok\":true}"}}]}`)
+		_, _ = io.WriteString(w, dashscopeOK(`"{\"ok\":true}"`))
 	}))
 	defer server.Close()
 
@@ -41,23 +46,20 @@ func TestClientPayloadIncludesSystemUserAndSamplingParams(t *testing.T) {
 	if captured.Model != domain.DefaultModel {
 		t.Fatalf("default model not used: %s", captured.Model)
 	}
-	if len(captured.Messages) != 2 {
-		t.Fatalf("expected 2 messages, got %d", len(captured.Messages))
+	if len(captured.Input) != 2 {
+		t.Fatalf("expected 2 input messages, got %d", len(captured.Input))
 	}
-	if captured.Messages[0].Role != "system" || captured.Messages[0].Content != "system prompt" {
-		t.Fatalf("unexpected system message: %+v", captured.Messages[0])
+	if captured.Input[0].Role != "system" || captured.Input[0].Content != "system prompt" {
+		t.Fatalf("unexpected system message: %+v", captured.Input[0])
 	}
-	if captured.Messages[1].Role != "user" || captured.Messages[1].Content != "user prompt" {
-		t.Fatalf("unexpected user message: %+v", captured.Messages[1])
+	if captured.Input[1].Role != "user" || captured.Input[1].Content != "user prompt" {
+		t.Fatalf("unexpected user message: %+v", captured.Input[1])
 	}
 	if captured.Temperature == nil || math.Abs(*captured.Temperature-0.1) > 0.000001 {
 		t.Fatalf("expected temperature=0.1, got %+v", captured.Temperature)
 	}
-	if captured.MaxTokens != 4000 {
-		t.Fatalf("expected max_tokens=4000, got %d", captured.MaxTokens)
-	}
-	if captured.ResponseFormat == nil || captured.ResponseFormat.Type != "json_object" {
-		t.Fatalf("expected response_format json_object, got %+v", captured.ResponseFormat)
+	if len(captured.Tools) != 2 {
+		t.Fatalf("expected 2 tools, got %d", len(captured.Tools))
 	}
 	if strings.TrimSpace(string(raw)) != `{"ok":true}` {
 		t.Fatalf("unexpected response payload: %s", raw)
@@ -105,7 +107,7 @@ func TestClientStatusMapping(t *testing.T) {
 func TestClientMapsNotFoundMessageContent(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = io.WriteString(w, `{"choices":[{"message":{"content":"Book not found for the given ISBN"}}]}`)
+		_, _ = io.WriteString(w, dashscopeOK(`"Book not found for the given ISBN"`))
 	}))
 	defer server.Close()
 
@@ -180,48 +182,22 @@ func TestIsTimeoutError(t *testing.T) {
 	}
 }
 
-func TestClientFallbackWhenResponseFormatUnsupported(t *testing.T) {
-	call := 0
-	var payloads []RequestPayload
+func TestClientDashScopeErrorField(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		call++
-		var payload RequestPayload
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-			t.Fatalf("decode payload: %v", err)
-		}
-		payloads = append(payloads, payload)
-
 		w.Header().Set("Content-Type", "application/json")
-		if call == 1 {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = io.WriteString(w, `{"error":{"message":"response_format is unsupported for this model"}}`)
-			return
-		}
-		_, _ = io.WriteString(w, `{"choices":[{"message":{"content":"{\"ok\":true}"}}]}`)
+		_, _ = io.WriteString(w, `{"output":[],"error":{"code":"InvalidParameter","message":"bad input"}}`)
 	}))
 	defer server.Close()
 
 	client := NewClient(server.Client())
 	client.BaseURL = server.URL
 
-	raw, err := client.Collect(context.Background(), domain.DefaultModel, "token", "system", "prompt")
-	if err != nil {
-		t.Fatalf("collect with fallback: %v", err)
+	_, err := client.Collect(context.Background(), domain.DefaultModel, "token", "system", "prompt")
+	if err == nil {
+		t.Fatalf("expected error")
 	}
-	if strings.TrimSpace(string(raw)) != `{"ok":true}` {
-		t.Fatalf("unexpected payload: %s", raw)
-	}
-	if call != 2 {
-		t.Fatalf("expected 2 requests, got %d", call)
-	}
-	if len(payloads) != 2 {
-		t.Fatalf("expected captured payloads for 2 requests, got %d", len(payloads))
-	}
-	if payloads[0].ResponseFormat == nil || payloads[0].ResponseFormat.Type != "json_object" {
-		t.Fatalf("first request must include response_format, got %+v", payloads[0].ResponseFormat)
-	}
-	if payloads[1].ResponseFormat != nil {
-		t.Fatalf("fallback request must omit response_format, got %+v", payloads[1].ResponseFormat)
+	if !strings.Contains(err.Error(), "InvalidParameter") {
+		t.Fatalf("expected dashscope error code, got %v", err)
 	}
 }
 

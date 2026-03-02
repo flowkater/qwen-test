@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const DefaultModel = "qwen/qwen3.5-flash-02-23"
+const DefaultModel = "qwen3.5-flash"
 const DefaultOutputFormat = "json"
 
 type BookQuery struct {

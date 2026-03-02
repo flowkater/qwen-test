@@ -143,7 +143,7 @@ func shouldPrintSummary(info domain.BookInfo, outputPath string, full bool) bool
 func mapError(err error) error {
 	switch {
 	case errorsIs(err, domain.ErrMissingAPIKey):
-		return fmt.Errorf("API 키가 없습니다. OPENROUTER_API_KEY 또는 --api-key를 설정하세요")
+		return fmt.Errorf("API 키가 없습니다. DASHSCOPE_API_KEY 또는 --api-key를 설정하세요")
 	case errorsIs(err, domain.ErrMissingQuery):
 		return fmt.Errorf("제목 또는 --isbn 중 하나는 필수입니다")
 	case errorsIs(err, domain.ErrInvalidLang):

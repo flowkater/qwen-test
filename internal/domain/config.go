@@ -2,11 +2,13 @@ package domain
 
 import "strings"
 
+const DashScopeBaseURL = "https://dashscope-intl.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1/responses"
+
 func ResolveAPIKey(flagValue string, env map[string]string) (apiKey string, source string, err error) {
 	if strings.TrimSpace(flagValue) != "" {
 		return strings.TrimSpace(flagValue), "flag", nil
 	}
-	if value := strings.TrimSpace(env["OPENROUTER_API_KEY"]); value != "" {
+	if value := strings.TrimSpace(env["DASHSCOPE_API_KEY"]); value != "" {
 		return value, "env", nil
 	}
 	return "", "", ErrMissingAPIKey

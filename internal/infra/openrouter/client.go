@@ -27,18 +27,19 @@ type Client struct {
 
 func NewClient(httpClient HTTPClient) *Client {
 	return &Client{
-		BaseURL: "https://openrouter.ai/api/v1/chat/completions",
+		BaseURL: domain.DashScopeBaseURL,
 		HTTP:    httpClient,
-		Timeout: 30 * time.Second,
+		Timeout: 180 * time.Second,
 	}
 }
 
+// DashScope Responses API types
+
 type RequestPayload struct {
-	Model          string          `json:"model"`
-	Messages       []Message       `json:"messages"`
-	Temperature    *float64        `json:"temperature,omitempty"`
-	MaxTokens      int             `json:"max_tokens,omitempty"`
-	ResponseFormat *ResponseFormat `json:"response_format,omitempty"`
+	Model       string   `json:"model"`
+	Input       []Message `json:"input"`
+	Tools       []Tool   `json:"tools,omitempty"`
+	Temperature *float64 `json:"temperature,omitempty"`
 }
 
 type Message struct {
@@ -46,8 +47,30 @@ type Message struct {
 	Content string `json:"content"`
 }
 
-type ResponseFormat struct {
+type Tool struct {
 	Type string `json:"type"`
+}
+
+type ResponseOutput struct {
+	Output []OutputItem `json:"output"`
+	Usage  struct {
+		InputTokens  int `json:"input_tokens"`
+		OutputTokens int `json:"output_tokens"`
+	} `json:"usage"`
+	Error *struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	} `json:"error"`
+}
+
+type OutputItem struct {
+	Type    string        `json:"type"`
+	Content []ContentItem `json:"content,omitempty"`
+}
+
+type ContentItem struct {
+	Type string `json:"type"`
+	Text string `json:"text"`
 }
 
 func (c *Client) Collect(ctx context.Context, model, apiKey, systemPrompt, userPrompt string) ([]byte, error) {
@@ -57,25 +80,21 @@ func (c *Client) Collect(ctx context.Context, model, apiKey, systemPrompt, userP
 
 	temp := 0.1
 	payload := RequestPayload{
-		Model:          model,
-		Temperature:    &temp,
-		MaxTokens:      4000,
-		ResponseFormat: &ResponseFormat{Type: "json_object"},
-		Messages: []Message{
+		Model:       model,
+		Temperature: &temp,
+		Input: []Message{
 			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: userPrompt},
+		},
+		Tools: []Tool{
+			{Type: "web_search"},
+			{Type: "web_extractor"},
 		},
 	}
 
 	content, err := c.collectContent(ctx, apiKey, payload)
 	if err != nil {
-		if shouldRetryWithoutResponseFormat(err) {
-			payload.ResponseFormat = nil
-			content, err = c.collectContent(ctx, apiKey, payload)
-		}
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	lower := strings.ToLower(content)
@@ -120,7 +139,7 @@ func (c *Client) collectContent(ctx context.Context, apiKey string, payload Requ
 	}
 
 	if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
-		return "", &domain.RetryableError{Code: resp.StatusCode, Err: fmt.Errorf("openrouter status %d", resp.StatusCode)}
+		return "", &domain.RetryableError{Code: resp.StatusCode, Err: fmt.Errorf("dashscope status %d", resp.StatusCode)}
 	}
 	if resp.StatusCode == http.StatusNotFound {
 		return "", domain.ErrBookNotFound
@@ -132,20 +151,27 @@ func (c *Client) collectContent(ctx context.Context, apiKey string, payload Requ
 		}
 	}
 
-	var parsed struct {
-		Choices []struct {
-			Message struct {
-				Content string `json:"content"`
-			} `json:"message"`
-		} `json:"choices"`
-	}
+	var parsed ResponseOutput
 	if err := json.Unmarshal(raw, &parsed); err != nil {
 		return "", fmt.Errorf("response decode: %w", err)
 	}
-	if len(parsed.Choices) == 0 {
-		return "", fmt.Errorf("response decode: empty choices")
+
+	if parsed.Error != nil && parsed.Error.Code != "" {
+		return "", fmt.Errorf("dashscope error %s: %s", parsed.Error.Code, parsed.Error.Message)
 	}
-	return parsed.Choices[0].Message.Content, nil
+
+	// Find the "message" output item
+	for _, item := range parsed.Output {
+		if item.Type == "message" && len(item.Content) > 0 {
+			for _, c := range item.Content {
+				if c.Type == "output_text" && strings.TrimSpace(c.Text) != "" {
+					return c.Text, nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("response decode: no message output found")
 }
 
 type providerStatusError struct {
@@ -155,25 +181,9 @@ type providerStatusError struct {
 
 func (e *providerStatusError) Error() string {
 	if strings.TrimSpace(e.Detail) == "" {
-		return fmt.Sprintf("openrouter non-retryable status %d", e.Code)
+		return fmt.Sprintf("dashscope non-retryable status %d", e.Code)
 	}
-	return fmt.Sprintf("openrouter non-retryable status %d: %s", e.Code, e.Detail)
-}
-
-func shouldRetryWithoutResponseFormat(err error) bool {
-	var statusErr *providerStatusError
-	if !errors.As(err, &statusErr) || statusErr.Code != http.StatusBadRequest {
-		return false
-	}
-
-	detail := strings.ToLower(statusErr.Detail)
-	if !strings.Contains(detail, "response_format") {
-		return false
-	}
-
-	return strings.Contains(detail, "unsupported") ||
-		strings.Contains(detail, "not support") ||
-		strings.Contains(detail, "invalid")
+	return fmt.Sprintf("dashscope non-retryable status %d: %s", e.Code, e.Detail)
 }
 
 func extractJSON(content string) ([]byte, error) {

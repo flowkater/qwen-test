@@ -1,0 +1,543 @@
+{
+  "model": "qwen3.5-flash",
+  "results": [
+    {
+      "case_id": "cleancode",
+      "ok": true,
+      "elapsed": 76.6205530166626,
+      "parsed": {
+        "metadata": {
+          "author": "Robert C. Martin",
+          "publisher": "Addison-Wesley Professional (Pearson Education)",
+          "isbn13": "9780132350884"
+        },
+        "table_of_contents": {
+          "total_chapters": 17,
+          "total_appendices": 3,
+          "chapter_titles": [
+            "Chapter 1: Clean Code",
+            "Chapter 2: Meaningful Names",
+            "Chapter 3: Functions",
+            "Chapter 4: Comments",
+            "Chapter 5: Formatting",
+            "Chapter 6: Objects and Data Structures",
+            "Chapter 7: Error Handling",
+            "Chapter 8: Boundaries",
+            "Chapter 9: Unit Tests",
+            "Chapter 10: Classes",
+            "Chapter 11: Systems",
+            "Chapter 12: Emergence",
+            "Chapter 13: Concurrency",
+            "Chapter 14: Successive Refinement",
+            "Chapter 15: JUnit Internals",
+            "Chapter 16: Refactoring SerialDate",
+            "Chapter 17: Smells and Heuristics"
+          ],
+          "max_depth_observed": 1
+        }
+      },
+      "response_text": "{\n  \"metadata\": {\n    \"author\": \"Robert C. Martin\",\n    \"publisher\": \"Addison-Wesley Professional (Pearson Education)\",\n    \"isbn13\": \"9780132350884\"\n  },\n  \"table_of_contents\": {\n    \"total_chapters\": 17,\n    \"total_appendices\": 3,\n    \"chapter_titles\": [\n      \"Chapter 1: Clean Code\",\n      \"Chapter 2: Meaningful Names\",\n      \"Chapter 3: Functions\",\n      \"Chapter 4: Comments\",\n      \"Chapter 5: Formatting\",\n      \"Chapter 6: Objects and Data Structures\",\n      \"Chapter 7: Error Handling\",\n      \"Chapter 8: Boundaries\",\n      \"Chapter 9: Unit Tests\",\n      \"Chapter 10: Classes\",\n      \"Chapter 11: Systems\",\n      \"Chapter 12: Emergence\",\n      \"Chapter 13: Concurrency\",\n      \"Chapter 14: Successive Refinement\",\n      \"Chapter 15: JUnit Internals\",\n      \"Chapter 16: Refactoring SerialDate\",\n      \"Chapter 17: Smells and Heuristics\"\n    ],\n    \"max_depth_observed\": 1\n  }\n}",
+      "searches": 3,
+      "extracts": 3,
+      "usage": {
+        "input_tokens": 125200,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 1156,
+        "output_tokens_details": {
+          "reasoning_tokens": 219
+        },
+        "total_tokens": 126356,
+        "x_details": [
+          {
+            "input_tokens": 125200,
+            "output_tokens": 1156,
+            "output_tokens_details": {
+              "reasoning_tokens": 219
+            },
+            "plugins": {
+              "web_extractor": {
+                "count": 3
+              },
+              "web_search": {
+                "count": 3
+              }
+            },
+            "total_tokens": 126356,
+            "x_billing_type": "response_api"
+          }
+        ],
+        "x_tools": {
+          "web_extractor": {
+            "count": 3
+          },
+          "web_search": {
+            "count": 3
+          }
+        }
+      },
+      "checks": [
+        [
+          "metadata.author",
+          "Robert C. Martin",
+          "Robert C. Martin",
+          true
+        ],
+        [
+          "metadata.publisher",
+          "Addison-Wesley Professional",
+          "Addison-Wesley Professional (Pearson Education)",
+          true
+        ],
+        [
+          "metadata.isbn13",
+          "978-0132350884",
+          "9780132350884",
+          true
+        ],
+        [
+          "total_chapters",
+          "17",
+          "17",
+          true
+        ],
+        [
+          "total_appendices",
+          "3",
+          "3",
+          true
+        ],
+        [
+          "\"Meaningful Names\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Functions\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Comments\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Objects and Data Structures\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Classes\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Exceptions\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"Boundaries\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "max_depth",
+          ">=3",
+          "1",
+          false
+        ]
+      ],
+      "passed": 12,
+      "total": 13
+    },
+    {
+      "case_id": "mcat",
+      "ok": false,
+      "elapsed": 180.27621579170227,
+      "error": "The read operation timed out",
+      "checks": [],
+      "passed": 0,
+      "total": 0
+    },
+    {
+      "case_id": "inflearn",
+      "ok": true,
+      "elapsed": 53.16709613800049,
+      "parsed": {
+        "metadata": {
+          "instructor": "mindlantern",
+          "platform": "Inflearn",
+          "rating": 4.9,
+          "total_lectures": 24
+        },
+        "curriculum": {
+          "total_sections": 4,
+          "section_titles": [
+            "Why learn system design?",
+            "4 key goals of system design",
+            "Main system components and trade-offs",
+            "Designing and explaining my own architecture"
+          ],
+          "section_lecture_counts": [
+            4,
+            6,
+            9,
+            5
+          ],
+          "key_lectures": {
+            "3.3": {
+              "title": "API Gateway & Load Balancer & Service Discovery",
+              "duration": "16:01"
+            },
+            "3.7": {
+              "title": "Message Queue & Event Broker",
+              "duration": "32:12"
+            }
+          }
+        }
+      },
+      "response_text": "{\n  \"metadata\": {\n    \"instructor\": \"mindlantern\",\n    \"platform\": \"Inflearn\",\n    \"rating\": 4.9,\n    \"total_lectures\": 24\n  },\n  \"curriculum\": {\n    \"total_sections\": 4,\n    \"section_titles\": [\n      \"Why learn system design?\",\n      \"4 key goals of system design\",\n      \"Main system components and trade-offs\",\n      \"Designing and explaining my own architecture\"\n    ],\n    \"section_lecture_counts\": [\n      4,\n      6,\n      9,\n      5\n    ],\n    \"key_lectures\": {\n      \"3.3\": {\n        \"title\": \"API Gateway & Load Balancer & Service Discovery\",\n        \"duration\": \"16:01\"\n      },\n      \"3.7\": {\n        \"title\": \"Message Queue & Event Broker\",\n        \"duration\": \"32:12\"\n      }\n    }\n  }\n}",
+      "searches": 0,
+      "extracts": 1,
+      "usage": {
+        "input_tokens": 11351,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 3040,
+        "output_tokens_details": {
+          "reasoning_tokens": 2694
+        },
+        "total_tokens": 14391,
+        "x_details": [
+          {
+            "input_tokens": 11351,
+            "output_tokens": 3040,
+            "output_tokens_details": {
+              "reasoning_tokens": 2694
+            },
+            "plugins": {
+              "web_extractor": {
+                "count": 1
+              }
+            },
+            "total_tokens": 14391,
+            "x_billing_type": "response_api"
+          }
+        ],
+        "x_tools": {
+          "web_extractor": {
+            "count": 1
+          }
+        }
+      },
+      "checks": [
+        [
+          "metadata.instructor",
+          "mindlantern",
+          "mindlantern",
+          true
+        ],
+        [
+          "metadata.platform",
+          "Inflearn",
+          "Inflearn",
+          true
+        ],
+        [
+          "metadata.rating",
+          "4.9",
+          "4.9",
+          true
+        ],
+        [
+          "metadata.total_lectures",
+          "24",
+          "24",
+          true
+        ],
+        [
+          "total_sections",
+          "4",
+          "4",
+          true
+        ],
+        [
+          "sec \"Why Learn System Design\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "sec \"4 Key Goals of System Des\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "sec \"Main System Components an\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "sec \"Designing and Explaining \"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "lec[3.3].title",
+          "",
+          "API Gateway & Load Balancer & Service Discovery",
+          true
+        ],
+        [
+          "lec[3.3].duration",
+          "",
+          "16:01",
+          true
+        ],
+        [
+          "lec[3.7].title",
+          "",
+          "Message Queue & Event Broker",
+          true
+        ],
+        [
+          "lec[3.7].duration",
+          "",
+          "32:12",
+          true
+        ]
+      ],
+      "passed": 13,
+      "total": 13
+    },
+    {
+      "case_id": "realdeal",
+      "ok": true,
+      "elapsed": 110.33052587509155,
+      "parsed": {
+        "metadata": {
+          "platform": "Real Deal Class",
+          "difficulty": "왕초보-초중급",
+          "duration": "6개월"
+        },
+        "curriculum": {
+          "total_chapters": 45,
+          "has_special_lessons": true,
+          "special_lesson_count": 5,
+          "chapter_titles": [
+            "문법의 개념",
+            "품사의 개념",
+            "역할의 개념",
+            "자동사와 타동사",
+            "1형식 문장",
+            "2형식 문장",
+            "3형식 문장",
+            "4형식 문장",
+            "5형식 문장",
+            "영어 문장의 기본기",
+            "세 가지 동사의 종류",
+            "부정문 만들기",
+            "의문문 만들기",
+            "동사의 시제 – 현재 시제",
+            "동사의 시제 – 과거 시제",
+            "동사의 시제 – 미래 시제",
+            "동사의 시제 – 진행형",
+            "동사의 시제 – 완료형 1",
+            "동사의 시제 – 완료형 2",
+            "동사의 시제 – 조동사 1",
+            "동사의 시제 – 조동사 2",
+            "동사의 태 – 수동태 1",
+            "동사의 태 – 수동태 2",
+            "동사의 태 – 수동태 3",
+            "동사의 태 – 수동태 4",
+            "동사의 변형 – 준동사 – 동명사 Ving",
+            "동사의 변형 – 준동사 – to-V 1",
+            "동사의 변형 – 준동사 – to-V 2",
+            "동사의 변형 – 준동사 – to-V 3",
+            "동사의 변형 – Ving와 to-V 정리",
+            "동사의 변형 – 분사 ving와 p.p",
+            "종합연습 1",
+            "긴 문장 – 명사가 길어질 때 – WH",
+            "긴 문장 – 명사가 길어질 때 – that",
+            "긴 문장 – 명사가 길어질 때 – whether & if",
+            "긴 문장 – 형용사가 길어질 때 – wh- and that (1)",
+            "긴 문장 – 형용사가 길어질 때 – wh- and that (2)",
+            "문장 붙이기 – 접속사",
+            "문장 붙이기 – 분사구문",
+            "종합연습 2",
+            "비교표현 – 차이를 비교하기",
+            "비교표현 – 극단을 표현하기",
+            "비교표현 – 비슷함 비교하기",
+            "부정표현 – 다양하게 부정하기",
+            "더 사람답게 말하기 – 생략, 삽입, 도치"
+          ],
+          "key_lectures": {
+            "1": {
+              "title": "문법의 개념",
+              "duration": "37:23"
+            },
+            "27": {
+              "title": "동사의 변형 – 준동사 – to-V 1",
+              "duration": "42:20"
+            }
+          }
+        }
+      },
+      "response_text": "{\n  \"metadata\": {\n    \"platform\": \"Real Deal Class\",\n    \"difficulty\": \"왕초보-초중급\",\n    \"duration\": \"6개월\"\n  },\n  \"curriculum\": {\n    \"total_chapters\": 45,\n    \"has_special_lessons\": true,\n    \"special_lesson_count\": 5,\n    \"chapter_titles\": [\n      \"문법의 개념\",\n      \"품사의 개념\",\n      \"역할의 개념\",\n      \"자동사와 타동사\",\n      \"1형식 문장\",\n      \"2형식 문장\",\n      \"3형식 문장\",\n      \"4형식 문장\",\n      \"5형식 문장\",\n      \"영어 문장의 기본기\",\n      \"세 가지 동사의 종류\",\n      \"부정문 만들기\",\n      \"의문문 만들기\",\n      \"동사의 시제 – 현재 시제\",\n      \"동사의 시제 – 과거 시제\",\n      \"동사의 시제 – 미래 시제\",\n      \"동사의 시제 – 진행형\",\n      \"동사의 시제 – 완료형 1\",\n      \"동사의 시제 – 완료형 2\",\n      \"동사의 시제 – 조동사 1\",\n      \"동사의 시제 – 조동사 2\",\n      \"동사의 태 – 수동태 1\",\n      \"동사의 태 – 수동태 2\",\n      \"동사의 태 – 수동태 3\",\n      \"동사의 태 – 수동태 4\",\n      \"동사의 변형 – 준동사 – 동명사 Ving\",\n      \"동사의 변형 – 준동사 – to-V 1\",\n      \"동사의 변형 – 준동사 – to-V 2\",\n      \"동사의 변형 – 준동사 – to-V 3\",\n      \"동사의 변형 – Ving와 to-V 정리\",\n      \"동사의 변형 – 분사 ving와 p.p\",\n      \"종합연습 1\",\n      \"긴 문장 – 명사가 길어질 때 – WH\",\n      \"긴 문장 – 명사가 길어질 때 – that\",\n      \"긴 문장 – 명사가 길어질 때 – whether & if\",\n      \"긴 문장 – 형용사가 길어질 때 – wh- and that (1)\",\n      \"긴 문장 – 형용사가 길어질 때 – wh- and that (2)\",\n      \"문장 붙이기 – 접속사\",\n      \"문장 붙이기 – 분사구문\",\n      \"종합연습 2\",\n      \"비교표현 – 차이를 비교하기\",\n      \"비교표현 – 극단을 표현하기\",\n      \"비교표현 – 비슷함 비교하기\",\n      \"부정표현 – 다양하게 부정하기\",\n      \"더 사람답게 말하기 – 생략, 삽입, 도치\"\n    ],\n    \"key_lectures\": {\n      \"1\": {\n        \"title\": \"문법의 개념\",\n        \"duration\": \"37:23\"\n      },\n      \"27\": {\n        \"title\": \"동사의 변형 – 준동사 – to-V 1\",\n        \"duration\": \"42:20\"\n      }\n    }\n  }\n}",
+      "searches": 3,
+      "extracts": 4,
+      "usage": {
+        "input_tokens": 180355,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 5461,
+        "output_tokens_details": {
+          "reasoning_tokens": 4167
+        },
+        "total_tokens": 185816,
+        "x_details": [
+          {
+            "input_tokens": 180355,
+            "output_tokens": 5461,
+            "output_tokens_details": {
+              "reasoning_tokens": 4167
+            },
+            "plugins": {
+              "web_extractor": {
+                "count": 4
+              },
+              "web_search": {
+                "count": 3
+              }
+            },
+            "total_tokens": 185816,
+            "x_billing_type": "response_api"
+          }
+        ],
+        "x_tools": {
+          "web_extractor": {
+            "count": 4
+          },
+          "web_search": {
+            "count": 3
+          }
+        }
+      },
+      "checks": [
+        [
+          "metadata.platform",
+          "RealDealClass",
+          "Real Deal Class",
+          true
+        ],
+        [
+          "metadata.difficulty",
+          "(왕)초급 - 초중급",
+          "왕초보-초중급",
+          false
+        ],
+        [
+          "metadata.duration",
+          "6개월",
+          "6개월",
+          true
+        ],
+        [
+          "total_chapters",
+          "7",
+          "45",
+          false
+        ],
+        [
+          "has_special",
+          "True",
+          "True",
+          true
+        ],
+        [
+          "\"문장의 형태\"",
+          "포함",
+          "미포함",
+          false
+        ],
+        [
+          "\"동사의 종류\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"동사의 시제\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"수동태\"",
+          "포함",
+          "포함",
+          true
+        ],
+        [
+          "\"준동사 & 가짜 동사\"",
+          "포함",
+          "미포함",
+          false
+        ],
+        [
+          "\"긴 문장 만드는 원리\"",
+          "포함",
+          "미포함",
+          false
+        ],
+        [
+          "\"풍부한 문장 완성하기\"",
+          "포함",
+          "미포함",
+          false
+        ],
+        [
+          "lec[1].title",
+          "",
+          "문법의 개념",
+          true
+        ],
+        [
+          "lec[1].duration",
+          "",
+          "37:23",
+          true
+        ],
+        [
+          "lec[27].title",
+          "",
+          "동사의 변형 – 준동사 – to-V 1",
+          true
+        ],
+        [
+          "lec[27].duration",
+          "",
+          "42:20",
+          true
+        ]
+      ],
+      "passed": 10,
+      "total": 16
+    }
+  ]
+}

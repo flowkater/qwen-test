@@ -106,7 +106,7 @@ Flags:
   --lang, -l                ko|en|ja|zh-tw
   --full, -f                collect metadata+toc+review+courses+similar
   --format                  output format (json|text, default json)
-  --api-key                 override OPENROUTER_API_KEY
+  --api-key                 override DASHSCOPE_API_KEY
   --model, -m               model (default qwen/qwen3.5-flash-02-23)
   --output, -o              output path
   --batch, -b               batch text file (one title per line)
