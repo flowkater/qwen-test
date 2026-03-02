@@ -34,10 +34,10 @@ CASE_TO_FIXTURE = {
 }
 PROMPT_MODES = ["strict-json", "soft-json", "two-step-json"]
 CASE_TO_QUERY = {
-    "cleancode": 'Clean Code by Robert C. Martin (English edition, Addison-Wesley Professional, ISBN 978-0132350884)',
-    "mcat": "MCAT Biological and Biochemical Foundations of Living Systems (Kaplan 7-book set, latest edition, ISBN 978-1506297408)",
-    "inflearn": '"시스템 디자인 첫걸음" 인프런(Inflearn) 강의 (강사: mindlantern/성장랜턴, 24강, 약 5시간)',
-    "realdeal": '"리얼딜 클라쓰 ZERO TO ONE" 영어 기초 문법 강의 (realdealclass.com, 7챕터+스페셜특강, 6개월)',
+    "cleancode": 'Clean Code: A Handbook of Agile Software Craftsmanship by Robert C. Martin (English, original edition)',
+    "mcat": "MCAT Biological & Biochemical Foundations - Kaplan Biology Review + Biochemistry Review (English, latest edition)",
+    "inflearn": '"시스템 디자인 첫걸음" 인프런 강의 (강사: mindlantern)',
+    "realdeal": '"리얼딜 클라쓰 ZERO TO ONE" 영어 문법 온라인 강의',
 }
 CASE_TO_SCHEMA = {
     "cleancode": (
@@ -72,7 +72,9 @@ CRITICAL RULES:
    - Do not translate unless explicitly requested.
 4. Prefer canonical/original edition data over translated variants unless query language says otherwise.
 5. If data is uncertain, leave placeholders empty instead of inventing values.
-6. If JSON is requested, output valid JSON only (no markdown, no explanation, no code fences)."""
+6. If JSON is requested, output valid JSON only (no markdown, no explanation, no code fences).
+7. Do NOT embed source citations, URLs, or references inside JSON values. Keep values clean data only.
+8. If the exact edition is uncertain but the book/lecture is clearly identified, still extract the TOC from available evidence rather than leaving it empty."""
 
 OPENROUTER_EVIDENCE_SYSTEM_PROMPT = """You are a careful web research assistant for metadata and curriculum extraction.
 
