@@ -1,0 +1,63 @@
+Title: Clean Code: A Handbook of Agile Software Craftsmanship (클린 코드)
+Author: Robert C. Martin
+Publisher: Prentice Hall
+ISBN13: 9780132350884
+
+[Table of Contents]
+- Clean Code: A Handbook of Agile Software Craftsmanship
+  - Introduction
+  - Chapter 1: Clean Code
+    - Meaning and Code
+    - Names
+    - Functions
+    - Comments
+    - Indentation
+  - Chapter 2: Naming
+    - Meaningful Names
+    - Naming Rules
+    - Class Names
+    - Method Names
+    - Parameter Names
+    - Variable Names
+    - Constant Names
+  - Chapter 3: Functions
+    - Small
+    - Do One Thing
+    - One Level of Abstraction
+    - Switch Statements
+  - Chapter 4: Comments
+    - Bad Comments
+    - Good Comments
+    - File Headings
+  - Chapter 5: Formatting
+    - Vertical Formatting
+    - Horizontal Formatting
+  - Chapter 6: Objects and Data Structures
+    - Data Object Transitivity
+    - Data/Object Antipatterns
+  - Chapter 7: Error Handling
+    - Use Exceptions
+    - Throw Appropriate Exceptions
+  - Chapter 8: Boundaries
+    - Dependencies
+    - Services
+  - Chapter 9: Unit Tests
+    - The Three Laws of TDD
+    - Fragments
+    - F.I.R.S.T.
+  - Chapter 10: Classes
+    - Organization
+    - Generalizations
+    - Polymorphism
+    - Data Structures
+  - Chapter 11: Systems
+    - System Architecture
+    - System Integration
+  - Chapter 12: Emergence
+    - Simple Design
+    - The Four Rules of Simple Design
+  - Chapter 13: Convention
+    - Object Naming
+    - Class Naming
+  - Appendix
+    - Smells and Heuristics
