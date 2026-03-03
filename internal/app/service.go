@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/flowkater/qwen/bookinfo/internal/domain"
 )
@@ -86,6 +87,10 @@ func (s *Service) ProcessOne(ctx context.Context, q domain.BookQuery) (ProcessRe
 	}
 	parts.Metadata = meta
 	parts.TOC = toc
+
+	// 2nd pass: enrich sparse TOC parts (multi-volume sets)
+	parts.TOC = s.enrichTOCParts(ctx, q, meta, parts.TOC)
+
 	if q.FullMode {
 		review, err := s.collectReview(ctx, q)
 		if err != nil {
@@ -278,6 +283,160 @@ func collectWithRetry[T any](svc *Service, ctx context.Context, collect func() (
 		return zero, lastErr
 	}
 	return zero, fmt.Errorf("%w: %v", domain.ErrInvalidResponse, lastErr)
+}
+
+// enrichTOCParts detects depth-1 parts whose chapters all have empty children,
+// then makes individual CollectPartTOC calls per part to get section-level detail.
+// This solves the output-token limitation of single-call TOC for multi-volume sets.
+func (s *Service) enrichTOCParts(ctx context.Context, q domain.BookQuery, meta domain.BookMetadata, toc []domain.TOCNode) []domain.TOCNode {
+	sparse := sparseParts(toc)
+	if len(sparse) == 0 {
+		return toc
+	}
+
+	enriched := make([]domain.TOCNode, len(toc))
+	copy(enriched, toc)
+
+	for _, idx := range sparse {
+		part := toc[idx]
+		existingChapters := make([]string, len(part.Children))
+		for i, ch := range part.Children {
+			existingChapters[i] = ch.Title.Original
+		}
+
+		children, err := s.collectPartTOC(ctx, q, meta.Title.Original, part.Title.Original, existingChapters)
+		if err != nil {
+			continue // keep original on failure
+		}
+		// Merge: map enriched chapters back to originals by title similarity.
+		// This filters out boilerplate (Preface, Getting Started, etc.) that
+		// the LLM may add despite prompt instructions.
+		merged := mergeEnrichedChildren(part.Children, children)
+		if countTOCNodes(merged) > countTOCNodes(part.Children) {
+			enriched[idx].Children = merged
+		}
+	}
+	return enriched
+}
+
+func countTOCNodes(nodes []domain.TOCNode) int {
+	count := len(nodes)
+	for _, n := range nodes {
+		count += countTOCNodes(n.Children)
+	}
+	return count
+}
+
+// sparseParts returns indices of depth-1 TOC nodes that have chapters (children)
+// but none of those chapters have any sections (grandchildren).
+func sparseParts(toc []domain.TOCNode) []int {
+	var indices []int
+	for i, node := range toc {
+		if len(node.Children) == 0 {
+			continue // leaf node, no enrichment needed
+		}
+		hasAnySections := false
+		for _, ch := range node.Children {
+			if len(ch.Children) > 0 {
+				hasAnySections = true
+				break
+			}
+		}
+		if !hasAnySections {
+			indices = append(indices, i)
+		}
+	}
+	return indices
+}
+
+// mergeEnrichedChildren maps enriched chapters back to original chapters by
+// title similarity. For each original chapter, it finds the best-matching
+// enriched chapter and copies its children (sections). Enriched chapters
+// that don't match any original (e.g. boilerplate front matter) are discarded.
+func mergeEnrichedChildren(originals, enriched []domain.TOCNode) []domain.TOCNode {
+	if len(enriched) == 0 {
+		return originals
+	}
+	result := make([]domain.TOCNode, len(originals))
+	copy(result, originals)
+
+	used := make([]bool, len(enriched))
+	for i, orig := range originals {
+		origNorm := normalizeTitle(orig.Title.Original)
+		best := -1
+		bestScore := 0.0
+		for j, enr := range enriched {
+			if used[j] {
+				continue
+			}
+			enrNorm := normalizeTitle(enr.Title.Original)
+			score := titleSimilarity(origNorm, enrNorm)
+			if score > bestScore {
+				bestScore = score
+				best = j
+			}
+		}
+		if best >= 0 && bestScore >= 0.4 && len(enriched[best].Children) > 0 {
+			result[i].Children = enriched[best].Children
+			used[best] = true
+		}
+	}
+	return result
+}
+
+// normalizeTitle lowercases and strips leading numbering like "Chapter 1:", "1.", etc.
+func normalizeTitle(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	// Strip common prefixes: "chapter N:", "part N:", numbering like "1." "1.1"
+	for _, prefix := range []string{"chapter ", "part "} {
+		if strings.HasPrefix(s, prefix) {
+			rest := s[len(prefix):]
+			// skip the number and colon/space after it
+			idx := strings.IndexFunc(rest, func(r rune) bool {
+				return !unicode.IsDigit(r) && r != '.' && r != ':' && r != ' '
+			})
+			if idx > 0 {
+				s = strings.TrimSpace(rest[idx:])
+			}
+		}
+	}
+	return s
+}
+
+// titleSimilarity returns a score [0,1] based on word overlap (Jaccard index).
+func titleSimilarity(a, b string) float64 {
+	if a == b {
+		return 1.0
+	}
+	if strings.Contains(a, b) || strings.Contains(b, a) {
+		return 0.9
+	}
+	wordsA := strings.Fields(a)
+	wordsB := strings.Fields(b)
+	if len(wordsA) == 0 || len(wordsB) == 0 {
+		return 0
+	}
+	setB := make(map[string]bool, len(wordsB))
+	for _, w := range wordsB {
+		setB[w] = true
+	}
+	overlap := 0
+	for _, w := range wordsA {
+		if setB[w] {
+			overlap++
+		}
+	}
+	union := len(wordsA) + len(wordsB) - overlap
+	if union == 0 {
+		return 0
+	}
+	return float64(overlap) / float64(union)
+}
+
+func (s *Service) collectPartTOC(ctx context.Context, q domain.BookQuery, parentTitle, partTitle string, existingChapters []string) ([]domain.TOCNode, error) {
+	return collectWithRetry(s, ctx, func() ([]byte, error) {
+		return s.Collector.CollectPartTOC(ctx, q, parentTitle, partTitle, existingChapters)
+	}, s.Validator.ValidateTOCJSON)
 }
 
 func (s *Service) collectUnified(ctx context.Context, q domain.BookQuery) ([]byte, error) {

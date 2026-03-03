@@ -20,7 +20,7 @@ func MergeBookInfo(q BookQuery, parts CollectedParts, now time.Time) (BookInfo, 
 		Metadata: CollectMetadata{
 			CollectedAt: now.UTC(),
 			Model:       q.Model,
-			Source:      "openrouter",
+			Source:      "dashscope",
 			Mode:        q.Mode(),
 			Query: CollectQuery{
 				Title:  q.Title,
@@ -81,16 +81,23 @@ func MergeBookInfo(q BookQuery, parts CollectedParts, now time.Time) (BookInfo, 
 }
 
 func normalizeTOC(nodes []TOCNode) []TOCNode {
+	return normalizeTOCAtDepth(nodes, 1)
+}
+
+// normalizeTOCAtDepth ensures correct depth values based on tree structure,
+// so we don't depend on the LLM returning consistent depth numbering.
+func normalizeTOCAtDepth(nodes []TOCNode, depth int) []TOCNode {
 	if nodes == nil {
 		return []TOCNode{}
 	}
 	out := make([]TOCNode, len(nodes))
 	for i, n := range nodes {
 		out[i] = n
+		out[i].Depth = depth
 		if out[i].Children == nil {
 			out[i].Children = []TOCNode{}
 		} else {
-			out[i].Children = normalizeTOC(out[i].Children)
+			out[i].Children = normalizeTOCAtDepth(out[i].Children, depth+1)
 		}
 	}
 	return out

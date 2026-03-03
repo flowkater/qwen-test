@@ -155,6 +155,38 @@ func TestRunnerBookNotFoundMapping(t *testing.T) {
 	}
 }
 
+func TestRunnerISBNSearchNoDuplicateWarning(t *testing.T) {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	r := &Runner{
+		Service: fakeService{
+			processOneFn: func(_ context.Context, _ domain.BookQuery) (app.ProcessResult, error) {
+				return app.ProcessResult{
+					Info: domain.BookInfo{
+						Book: domain.BookMetadata{
+							Title:         domain.LocalizedTitle{Original: "MCAT Complete"},
+							Author:        "Kaplan",
+							SelectionNote: "some note",
+						},
+						TableOfContents: []domain.TOCNode{{Title: domain.LocalizedTitle{Original: "Biology"}}},
+					},
+					OutputPath: "/tmp/mcat.json",
+				}, nil
+			},
+		},
+		Env:    map[string]string{"DASHSCOPE_API_KEY": "x"},
+		Stdout: stdout,
+		Stderr: stderr,
+	}
+	code := r.Run(context.Background(), []string{"--isbn", "9781506297545"})
+	if code != 0 {
+		t.Fatalf("expected success, got %d; stderr: %s", code, stderr.String())
+	}
+	if bytes.Contains(stdout.Bytes(), []byte("동명 도서")) {
+		t.Fatalf("ISBN search should NOT show duplicate warning, got: %s", stdout.String())
+	}
+}
+
 func TestRunnerNoBlankSummaryOnEarlyFailure(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}

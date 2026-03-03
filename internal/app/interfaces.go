@@ -10,6 +10,7 @@ import (
 type Collector interface {
 	CollectMetadata(ctx context.Context, q domain.BookQuery) ([]byte, error)
 	CollectTOC(ctx context.Context, q domain.BookQuery) ([]byte, error)
+	CollectPartTOC(ctx context.Context, q domain.BookQuery, parentTitle, partTitle string, existingChapters []string) ([]byte, error)
 	CollectReview(ctx context.Context, q domain.BookQuery) ([]byte, error)
 	CollectCourses(ctx context.Context, q domain.BookQuery) ([]byte, error)
 	CollectSimilarBooks(ctx context.Context, q domain.BookQuery) ([]byte, error)

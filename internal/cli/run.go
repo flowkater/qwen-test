@@ -74,7 +74,7 @@ func (r *Runner) Run(ctx context.Context, args []string) int {
 func (r *Runner) runSingle(ctx context.Context, query domain.BookQuery) int {
 	res, err := r.Service.ProcessOne(ctx, query)
 	if shouldPrintSummary(res.Info, res.OutputPath, query.FullMode) {
-		r.printSummary(res.Info, res.OutputPath, query.FullMode)
+		r.printSummary(res.Info, res.OutputPath, query.FullMode, query.ISBN13)
 	}
 	if err != nil {
 		fmt.Fprintf(r.Stderr, "error: %v\n", mapError(err))
@@ -107,7 +107,7 @@ func (r *Runner) runBatch(ctx context.Context, query domain.BookQuery) int {
 	return 0
 }
 
-func (r *Runner) printSummary(info domain.BookInfo, outputPath string, full bool) {
+func (r *Runner) printSummary(info domain.BookInfo, outputPath string, full bool, isbn string) {
 	fmt.Fprintf(r.Stdout, "Title: %s\n", info.Book.Title.Original)
 	fmt.Fprintf(r.Stdout, "Author: %s\n", info.Book.Author)
 	if len(info.TableOfContents) > 0 {
@@ -119,7 +119,7 @@ func (r *Runner) printSummary(info domain.BookInfo, outputPath string, full bool
 	if strings.TrimSpace(outputPath) != "" {
 		fmt.Fprintf(r.Stdout, "Saved: %s\n", outputPath)
 	}
-	if strings.TrimSpace(info.Book.SelectionNote) != "" {
+	if strings.TrimSpace(info.Book.SelectionNote) != "" && strings.TrimSpace(isbn) == "" {
 		fmt.Fprintf(r.Stdout, "동명 도서가 있을 수 있습니다. --author로 특정하세요\n")
 	}
 }

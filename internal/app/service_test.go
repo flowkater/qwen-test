@@ -3,10 +3,11 @@ package app
 import (
 	"context"
 	"encoding/json"
-	"sync"
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,13 +15,14 @@ import (
 )
 
 type fakeCollector struct {
-	mu         *sync.Mutex
-	order      *[]string
-	metadataFn func() ([]byte, error)
-	tocFn      func() ([]byte, error)
-	reviewFn   func() ([]byte, error)
-	coursesFn  func() ([]byte, error)
-	similarFn  func() ([]byte, error)
+	mu          *sync.Mutex
+	order       *[]string
+	metadataFn  func() ([]byte, error)
+	tocFn       func() ([]byte, error)
+	partTOCFn   func(parentTitle, partTitle string, chapters []string) ([]byte, error)
+	reviewFn    func() ([]byte, error)
+	coursesFn   func() ([]byte, error)
+	similarFn   func() ([]byte, error)
 }
 
 func (f fakeCollector) appendOrder(name string) {
@@ -46,6 +48,13 @@ func (f fakeCollector) CollectTOC(context.Context, domain.BookQuery) ([]byte, er
 		return f.tocFn()
 	}
 	return []byte(`[{"title":{"original":"Meaningful Names","korean":"의미있는 이름"},"depth":1,"children":[]}]`), nil
+}
+func (f fakeCollector) CollectPartTOC(_ context.Context, _ domain.BookQuery, parentTitle, partTitle string, chapters []string) ([]byte, error) {
+	f.appendOrder("partTOC")
+	if f.partTOCFn != nil {
+		return f.partTOCFn(parentTitle, partTitle, chapters)
+	}
+	return []byte(`[{"title":{"original":"Ch1","korean":""},"depth":1,"children":[{"title":{"original":"1.1 Section","korean":""},"depth":2,"children":[]}]}]`), nil
 }
 func (f fakeCollector) CollectReview(context.Context, domain.BookQuery) ([]byte, error) {
 	f.appendOrder("review")
@@ -411,6 +420,277 @@ func TestProcessBatchOutputPathsArePerItemWhenOutputDirGiven(t *testing.T) {
 	}
 	if len(uniq) != 3 {
 		t.Fatalf("batch outputs must be unique per item: %v", writer.paths)
+	}
+}
+
+func TestSparsePartsDetection(t *testing.T) {
+	tests := []struct {
+		name    string
+		toc     []domain.TOCNode
+		want    []int
+	}{
+		{
+			name: "all sparse",
+			toc: []domain.TOCNode{
+				{Title: domain.LocalizedTitle{Original: "Part 1"}, Depth: 1, Children: []domain.TOCNode{
+					{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{}},
+				}},
+				{Title: domain.LocalizedTitle{Original: "Part 2"}, Depth: 1, Children: []domain.TOCNode{
+					{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{}},
+				}},
+			},
+			want: []int{0, 1},
+		},
+		{
+			name: "none sparse - all have depth-3",
+			toc: []domain.TOCNode{
+				{Title: domain.LocalizedTitle{Original: "Part 1"}, Depth: 1, Children: []domain.TOCNode{
+					{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{
+						{Title: domain.LocalizedTitle{Original: "1.1"}, Depth: 3},
+					}},
+				}},
+			},
+			want: nil,
+		},
+		{
+			name: "leaf nodes ignored",
+			toc: []domain.TOCNode{
+				{Title: domain.LocalizedTitle{Original: "Foreword"}, Depth: 1, Children: []domain.TOCNode{}},
+			},
+			want: nil,
+		},
+		{
+			name: "mixed - only sparse parts returned",
+			toc: []domain.TOCNode{
+				{Title: domain.LocalizedTitle{Original: "Part 1"}, Depth: 1, Children: []domain.TOCNode{
+					{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{
+						{Title: domain.LocalizedTitle{Original: "1.1"}, Depth: 3},
+					}},
+				}},
+				{Title: domain.LocalizedTitle{Original: "Part 2"}, Depth: 1, Children: []domain.TOCNode{
+					{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{}},
+				}},
+			},
+			want: []int{1},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := sparseParts(tt.toc)
+			if len(got) != len(tt.want) {
+				t.Fatalf("sparseParts = %v, want %v", got, tt.want)
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Fatalf("sparseParts[%d] = %d, want %d", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestEnrichTOCPartsCallsCollectPartTOCForSparseParts(t *testing.T) {
+	partTOCCalls := []string{}
+	collector := fakeCollector{
+		partTOCFn: func(parentTitle, partTitle string, chapters []string) ([]byte, error) {
+			partTOCCalls = append(partTOCCalls, partTitle)
+			// Return same chapter count but WITH sections
+			return []byte(`[{"title":{"original":"Ch1","korean":""},"depth":1,"children":[{"title":{"original":"1.1 Section","korean":""},"depth":2,"children":[]}]}]`), nil
+		},
+	}
+	svc := &Service{
+		Collector: collector,
+		Validator: fakeValidator{},
+		Cache:     &memCache{},
+		Writer:    &fakeWriter{},
+		Sleep:     func(time.Duration) {},
+	}
+	svc.defaults()
+
+	sparseTOC := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Part 1"}, Depth: 1, Children: []domain.TOCNode{
+			{Title: domain.LocalizedTitle{Original: "Chapter 1"}, Depth: 2, Children: []domain.TOCNode{}},
+		}},
+		{Title: domain.LocalizedTitle{Original: "Part 2"}, Depth: 1, Children: []domain.TOCNode{
+			{Title: domain.LocalizedTitle{Original: "Chapter 1"}, Depth: 2, Children: []domain.TOCNode{}},
+		}},
+	}
+	meta := domain.BookMetadata{
+		Title:  domain.LocalizedTitle{Original: "Test Book"},
+		Author: "Test Author",
+	}
+	q := domain.BookQuery{Title: "Test Book", ISBN13: "978-1234567890"}
+
+	result := svc.enrichTOCParts(context.Background(), q, meta, sparseTOC)
+
+	if len(partTOCCalls) != 2 {
+		t.Fatalf("expected 2 partTOC calls for 2 sparse parts, got %d", len(partTOCCalls))
+	}
+	if partTOCCalls[0] != "Part 1" || partTOCCalls[1] != "Part 2" {
+		t.Fatalf("expected part titles in calls, got %v", partTOCCalls)
+	}
+	// Enriched children should have depth-2 sections (countNodes=2 > original 1)
+	for i, part := range result {
+		if len(part.Children) == 0 {
+			t.Fatalf("part %d should have children after enrichment", i)
+		}
+		if len(part.Children[0].Children) == 0 {
+			t.Fatalf("part %d ch0 should have depth-3 children after enrichment", i)
+		}
+	}
+}
+
+func TestEnrichTOCPartsKeepsOriginalOnFailure(t *testing.T) {
+	collector := fakeCollector{
+		partTOCFn: func(_, _ string, _ []string) ([]byte, error) {
+			return nil, errors.New("api failure")
+		},
+	}
+	svc := &Service{
+		Collector: collector,
+		Validator: fakeValidator{},
+		Cache:     &memCache{},
+		Writer:    &fakeWriter{},
+		Sleep:     func(time.Duration) {},
+	}
+	svc.defaults()
+
+	original := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Part 1"}, Depth: 1, Children: []domain.TOCNode{
+			{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{}},
+			{Title: domain.LocalizedTitle{Original: "Ch2"}, Depth: 2, Children: []domain.TOCNode{}},
+		}},
+	}
+	meta := domain.BookMetadata{Author: "Test"}
+	q := domain.BookQuery{Title: "Test"}
+
+	result := svc.enrichTOCParts(context.Background(), q, meta, original)
+
+	// Should keep original 2 chapters on failure
+	if len(result[0].Children) != 2 {
+		t.Fatalf("expected original 2 children preserved, got %d", len(result[0].Children))
+	}
+}
+
+func TestEnrichTOCPartsSkipsNonSparse(t *testing.T) {
+	partTOCCalled := false
+	collector := fakeCollector{
+		partTOCFn: func(_, _ string, _ []string) ([]byte, error) {
+			partTOCCalled = true
+			return []byte(`[]`), nil
+		},
+	}
+	svc := &Service{
+		Collector: collector,
+		Validator: fakeValidator{},
+		Cache:     &memCache{},
+		Writer:    &fakeWriter{},
+		Sleep:     func(time.Duration) {},
+	}
+	svc.defaults()
+
+	// Already has depth-3 content
+	richTOC := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Part 1"}, Depth: 1, Children: []domain.TOCNode{
+			{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{
+				{Title: domain.LocalizedTitle{Original: "1.1"}, Depth: 3},
+			}},
+		}},
+	}
+	meta := domain.BookMetadata{}
+	q := domain.BookQuery{Title: "Test"}
+
+	svc.enrichTOCParts(context.Background(), q, meta, richTOC)
+
+	if partTOCCalled {
+		t.Fatalf("collectPartTOC should NOT be called for non-sparse TOC")
+	}
+}
+
+func TestMergeEnrichedChildrenFiltersBoilerplate(t *testing.T) {
+	sec := func(title string) domain.TOCNode {
+		return domain.TOCNode{Title: domain.LocalizedTitle{Original: title}, Depth: 2}
+	}
+	originals := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Chapter 1: The Cell"}, Depth: 1},
+		{Title: domain.LocalizedTitle{Original: "Chapter 2: Enzymes"}, Depth: 1},
+	}
+	enriched := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Getting Started Checklist"}, Depth: 1},
+		{Title: domain.LocalizedTitle{Original: "Preface"}, Depth: 1},
+		{Title: domain.LocalizedTitle{Original: "About the MCAT"}, Depth: 1},
+		{Title: domain.LocalizedTitle{Original: "Chapter 1: The Cell"}, Depth: 1, Children: []domain.TOCNode{
+			sec("1.1 Cell Theory"), sec("1.2 Organelles"),
+		}},
+		{Title: domain.LocalizedTitle{Original: "Chapter 2: Enzymes"}, Depth: 1, Children: []domain.TOCNode{
+			sec("2.1 Enzyme Structure"), sec("2.2 Kinetics"),
+		}},
+	}
+
+	merged := mergeEnrichedChildren(originals, enriched)
+
+	// Should keep exactly 2 original chapters
+	if len(merged) != 2 {
+		t.Fatalf("expected 2 chapters, got %d", len(merged))
+	}
+	// Chapter 1 should have enriched sections
+	if len(merged[0].Children) != 2 {
+		t.Fatalf("chapter 1 should have 2 sections, got %d", len(merged[0].Children))
+	}
+	if merged[0].Children[0].Title.Original != "1.1 Cell Theory" {
+		t.Fatalf("expected '1.1 Cell Theory', got '%s'", merged[0].Children[0].Title.Original)
+	}
+	// Chapter 2 should have enriched sections
+	if len(merged[1].Children) != 2 {
+		t.Fatalf("chapter 2 should have 2 sections, got %d", len(merged[1].Children))
+	}
+	// Boilerplate (Getting Started, Preface, About) should be discarded
+	for _, ch := range merged {
+		title := strings.ToLower(ch.Title.Original)
+		if strings.Contains(title, "preface") || strings.Contains(title, "getting started") || strings.Contains(title, "about the mcat") {
+			t.Fatalf("boilerplate '%s' should have been filtered out", ch.Title.Original)
+		}
+	}
+}
+
+func TestMergeEnrichedChildrenNoMatchKeepsOriginal(t *testing.T) {
+	originals := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Quantum Mechanics"}, Depth: 1},
+	}
+	enriched := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Thermodynamics"}, Depth: 1, Children: []domain.TOCNode{
+			{Title: domain.LocalizedTitle{Original: "1.1 Heat"}, Depth: 2},
+		}},
+	}
+
+	merged := mergeEnrichedChildren(originals, enriched)
+
+	if len(merged) != 1 {
+		t.Fatalf("expected 1 chapter, got %d", len(merged))
+	}
+	if merged[0].Title.Original != "Quantum Mechanics" {
+		t.Fatalf("expected original title preserved, got '%s'", merged[0].Title.Original)
+	}
+	if len(merged[0].Children) != 0 {
+		t.Fatalf("should keep empty children when no match, got %d", len(merged[0].Children))
+	}
+}
+
+func TestTitleSimilarity(t *testing.T) {
+	tests := []struct {
+		a, b   string
+		minSim float64
+	}{
+		{"chapter 1: the cell", "chapter 1: the cell", 1.0},
+		{"the cell", "chapter 1: the cell", 0.4},
+		{"enzymes", "chapter 2: enzymes", 0.4},
+		{"quantum mechanics", "thermodynamics", 0.0},
+	}
+	for _, tc := range tests {
+		sim := titleSimilarity(normalizeTitle(tc.a), normalizeTitle(tc.b))
+		if sim < tc.minSim {
+			t.Errorf("titleSimilarity(%q, %q) = %f, want >= %f", tc.a, tc.b, sim, tc.minSim)
+		}
 	}
 }
 
