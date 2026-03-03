@@ -3,6 +3,7 @@ package app
 import (
 	"bufio"
 	"context"
+	"sync"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -75,12 +76,23 @@ func (s *Service) ProcessOne(ctx context.Context, q domain.BookQuery) (ProcessRe
 	}
 
 	var parts domain.CollectedParts
-	var err error
-	if parts.Metadata, err = s.collectMetadata(ctx, q); err != nil {
-		return ProcessResult{}, err
+	var metaErr, tocErr error
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		parts.Metadata, metaErr = s.collectMetadata(ctx, q)
+	}()
+	go func() {
+		defer wg.Done()
+		parts.TOC, tocErr = s.collectTOC(ctx, q)
+	}()
+	wg.Wait()
+	if metaErr != nil {
+		return ProcessResult{}, metaErr
 	}
-	if parts.TOC, err = s.collectTOC(ctx, q); err != nil {
-		return ProcessResult{}, err
+	if tocErr != nil {
+		return ProcessResult{}, tocErr
 	}
 	if q.FullMode {
 		review, err := s.collectReview(ctx, q)

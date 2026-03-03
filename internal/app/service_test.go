@@ -2,8 +2,8 @@ package app
 
 import (
 	"context"
+	"sync"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,6 +13,7 @@ import (
 )
 
 type fakeCollector struct {
+	mu         *sync.Mutex
 	order      *[]string
 	metadataFn func() ([]byte, error)
 	tocFn      func() ([]byte, error)
@@ -21,46 +22,46 @@ type fakeCollector struct {
 	similarFn  func() ([]byte, error)
 }
 
-func (f fakeCollector) CollectMetadata(context.Context, domain.BookQuery) ([]byte, error) {
+func (f fakeCollector) appendOrder(name string) {
 	if f.order != nil {
-		*f.order = append(*f.order, "metadata")
+		if f.mu != nil {
+			f.mu.Lock()
+			defer f.mu.Unlock()
+		}
+		*f.order = append(*f.order, name)
 	}
+}
+
+func (f fakeCollector) CollectMetadata(context.Context, domain.BookQuery) ([]byte, error) {
+	f.appendOrder("metadata")
 	if f.metadataFn != nil {
 		return f.metadataFn()
 	}
 	return []byte(`{"title":{"original":"Clean Code","korean":"클린 코드"},"author":"Robert C. Martin","publisher":"Addison-Wesley Professional","isbn13":"978-0132350884"}`), nil
 }
 func (f fakeCollector) CollectTOC(context.Context, domain.BookQuery) ([]byte, error) {
-	if f.order != nil {
-		*f.order = append(*f.order, "toc")
-	}
+	f.appendOrder("toc")
 	if f.tocFn != nil {
 		return f.tocFn()
 	}
 	return []byte(`[{"title":{"original":"Meaningful Names","korean":"의미있는 이름"},"depth":1,"children":[]}]`), nil
 }
 func (f fakeCollector) CollectReview(context.Context, domain.BookQuery) ([]byte, error) {
-	if f.order != nil {
-		*f.order = append(*f.order, "review")
-	}
+	f.appendOrder("review")
 	if f.reviewFn != nil {
 		return f.reviewFn()
 	}
 	return []byte(`{"rating":4.8,"summary":{"pros":[],"cons":[]},"recommended_level":"중급","prerequisites":[]}`), nil
 }
 func (f fakeCollector) CollectCourses(context.Context, domain.BookQuery) ([]byte, error) {
-	if f.order != nil {
-		*f.order = append(*f.order, "courses")
-	}
+	f.appendOrder("courses")
 	if f.coursesFn != nil {
 		return f.coursesFn()
 	}
 	return []byte(`[{"title":"course","platform":"YouTube","instructor":"x","curriculum":[],"rating":4.5,"price":"무료","url":"https://example.com"}]`), nil
 }
 func (f fakeCollector) CollectSimilarBooks(context.Context, domain.BookQuery) ([]byte, error) {
-	if f.order != nil {
-		*f.order = append(*f.order, "similar")
-	}
+	f.appendOrder("similar")
 	if f.similarFn != nil {
 		return f.similarFn()
 	}
@@ -169,7 +170,7 @@ func TestProcessOneBasicFlowOrderAndCache(t *testing.T) {
 	cache := &memCache{}
 	writer := &fakeWriter{}
 	svc := &Service{
-		Collector: fakeCollector{order: &order},
+		Collector: fakeCollector{mu: &sync.Mutex{}, order: &order},
 		Validator: fakeValidator{},
 		Cache:     cache,
 		Writer:    writer,
@@ -182,9 +183,13 @@ func TestProcessOneBasicFlowOrderAndCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("process: %v", err)
 	}
-	gotOrder := fmt.Sprint(order)
-	if gotOrder != "[metadata toc]" {
-		t.Fatalf("unexpected order: %s", gotOrder)
+	if len(order) != 2 {
+		t.Fatalf("expected 2 calls, got %d: %v", len(order), order)
+	}
+	gotSet := map[string]bool{}
+	for _, o := range order { gotSet[o] = true }
+	if !gotSet["metadata"] || !gotSet["toc"] {
+		t.Fatalf("expected metadata and toc calls, got: %v", order)
 	}
 	if cache.getCalls != 1 || cache.setCalls != 1 {
 		t.Fatalf("cache calls mismatch get=%d set=%d", cache.getCalls, cache.setCalls)
@@ -197,7 +202,7 @@ func TestProcessOneBasicFlowOrderAndCache(t *testing.T) {
 func TestProcessOneFullModeCallsAllCollectors(t *testing.T) {
 	var order []string
 	svc := &Service{
-		Collector: fakeCollector{order: &order},
+		Collector: fakeCollector{mu: &sync.Mutex{}, order: &order},
 		Validator: fakeValidator{},
 		Cache:     &memCache{},
 		Writer:    &fakeWriter{},
@@ -207,8 +212,14 @@ func TestProcessOneFullModeCallsAllCollectors(t *testing.T) {
 	if err != nil {
 		t.Fatalf("process full: %v", err)
 	}
-	if fmt.Sprint(order) != "[metadata toc review courses similar]" {
-		t.Fatalf("unexpected order: %v", order)
+	expectedCalls := []string{"metadata", "toc", "review", "courses", "similar"}
+	if len(order) != len(expectedCalls) {
+		t.Fatalf("expected %d calls, got %d: %v", len(expectedCalls), len(order), order)
+	}
+	gotSet := map[string]bool{}
+	for _, o := range order { gotSet[o] = true }
+	for _, e := range expectedCalls {
+		if !gotSet[e] { t.Fatalf("missing call %q in %v", e, order) }
 	}
 }
 
@@ -278,8 +289,10 @@ func TestProcessOneStopsOnMiddleFailure(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	if fmt.Sprint(order) != "[metadata toc]" {
-		t.Fatalf("unexpected order on failure: %v", order)
+	gotSet := map[string]bool{}
+	for _, o := range order { gotSet[o] = true }
+	if !gotSet["metadata"] || !gotSet["toc"] {
+		t.Fatalf("expected metadata and toc calls, got: %v", order)
 	}
 }
 
