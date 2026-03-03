@@ -34,3 +34,7 @@ func (c *Collector) CollectCourses(ctx context.Context, q domain.BookQuery) ([]b
 func (c *Collector) CollectSimilarBooks(ctx context.Context, q domain.BookQuery) ([]byte, error) {
 	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildSimilarPrompt(q))
 }
+
+func (c *Collector) CollectUnified(ctx context.Context, q domain.BookQuery) ([]byte, error) {
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildUnifiedPrompt(q))
+}

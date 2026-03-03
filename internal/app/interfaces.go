@@ -13,6 +13,7 @@ type Collector interface {
 	CollectReview(ctx context.Context, q domain.BookQuery) ([]byte, error)
 	CollectCourses(ctx context.Context, q domain.BookQuery) ([]byte, error)
 	CollectSimilarBooks(ctx context.Context, q domain.BookQuery) ([]byte, error)
+	CollectUnified(ctx context.Context, q domain.BookQuery) ([]byte, error)
 }
 
 type Validator interface {
@@ -21,6 +22,7 @@ type Validator interface {
 	ValidateReviewJSON(raw []byte) (domain.ReviewInfo, error)
 	ValidateCoursesJSON(raw []byte) ([]domain.RelatedCourse, error)
 	ValidateSimilarBooksJSON(raw []byte) ([]domain.SimilarBook, error)
+	ValidateUnifiedJSON(raw []byte) (domain.BookMetadata, []domain.TOCNode, error)
 }
 
 type Cache interface {

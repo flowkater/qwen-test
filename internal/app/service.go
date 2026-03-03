@@ -3,7 +3,6 @@ package app
 import (
 	"bufio"
 	"context"
-	"sync"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -76,24 +75,17 @@ func (s *Service) ProcessOne(ctx context.Context, q domain.BookQuery) (ProcessRe
 	}
 
 	var parts domain.CollectedParts
-	var metaErr, tocErr error
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		parts.Metadata, metaErr = s.collectMetadata(ctx, q)
-	}()
-	go func() {
-		defer wg.Done()
-		parts.TOC, tocErr = s.collectTOC(ctx, q)
-	}()
-	wg.Wait()
-	if metaErr != nil {
-		return ProcessResult{}, metaErr
+	// Single unified call: metadata + TOC in one DashScope request
+	unifiedRaw, err := s.collectUnified(ctx, q)
+	if err != nil {
+		return ProcessResult{}, err
 	}
-	if tocErr != nil {
-		return ProcessResult{}, tocErr
+	meta, toc, err := s.Validator.ValidateUnifiedJSON(unifiedRaw)
+	if err != nil {
+		return ProcessResult{}, err
 	}
+	parts.Metadata = meta
+	parts.TOC = toc
 	if q.FullMode {
 		review, err := s.collectReview(ctx, q)
 		if err != nil {
@@ -286,4 +278,10 @@ func collectWithRetry[T any](svc *Service, ctx context.Context, collect func() (
 		return zero, lastErr
 	}
 	return zero, fmt.Errorf("%w: %v", domain.ErrInvalidResponse, lastErr)
+}
+
+func (s *Service) collectUnified(ctx context.Context, q domain.BookQuery) ([]byte, error) {
+	return collectWithRetry(s, ctx, func() ([]byte, error) {
+		return s.Collector.CollectUnified(ctx, q)
+	}, func(raw []byte) ([]byte, error) { return raw, nil })
 }

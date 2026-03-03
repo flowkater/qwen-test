@@ -75,6 +75,43 @@ func BuildSimilarPrompt(q domain.BookQuery) string {
 		"\nReturn 3-5 similar books including title(original/korean), author, brief_description, difficulty_comparison."
 }
 
+
+
+func BuildUnifiedPrompt(q domain.BookQuery) string {
+	return commonLead(q) + `
+
+Return ONLY valid JSON object (no markdown, no explanation) with this exact structure:
+{
+  "metadata": {
+    "title": {"original": "", "korean": ""},
+    "author": "",
+    "publisher": "",
+    "published_date": "",
+    "isbn13": "",
+    "pages": 0,
+    "language": "",
+    "edition": "",
+    "selection_note": ""
+  },
+  "toc": [
+    {"title": {"original": "", "korean": ""}, "depth": 1, "children": []}
+  ]
+}
+
+Rules:
+- metadata.title.original: canonical title in ORIGINAL language.
+- metadata.title.korean: Korean translation only if confidently known, otherwise "".
+- metadata.author: ORIGINAL-language author name only.
+- metadata.publisher: ORIGINAL-language publisher name from the original edition.
+- metadata.isbn13: 13-digit ISBN string with hyphens when known.
+- toc: Include ALL main parts/chapters and appendices/annexes.
+- Preserve full hierarchy as recursive children nodes. Do NOT flatten.
+- Depth: 1=chapter, 2=section, 3=subsection, 4=sub-subsection.
+- Do NOT translate title.original.
+- If unknown, use "" for text fields and 0 for numbers.
+- Return ONLY the JSON object.`
+}
+
 func GetSystemPrompt() string {
 	return SystemPromptBookInfo
 }

@@ -87,3 +87,29 @@ func (v *JSONValidator) ValidateSimilarBooksJSON(raw []byte) ([]domain.SimilarBo
 	}
 	return items, nil
 }
+
+func (v *JSONValidator) ValidateUnifiedJSON(raw []byte) (domain.BookMetadata, []domain.TOCNode, error) {
+	var unified struct {
+		Metadata domain.BookMetadata `json:"metadata"`
+		TOC      json.RawMessage     `json:"toc"`
+	}
+	if err := json.Unmarshal(raw, &unified); err != nil {
+		return domain.BookMetadata{}, nil, fmt.Errorf("schema error: unified json parse: %w", err)
+	}
+
+	meta := unified.Metadata
+
+	var tocNodes []domain.TOCNode
+	if len(unified.TOC) > 0 {
+		// Try array first
+		if err := json.Unmarshal(unified.TOC, &tocNodes); err != nil {
+			// Try single object wrapped
+			var single domain.TOCNode
+			if err2 := json.Unmarshal(unified.TOC, &single); err2 == nil {
+				tocNodes = []domain.TOCNode{single}
+			}
+		}
+	}
+
+	return meta, tocNodes, nil
+}
