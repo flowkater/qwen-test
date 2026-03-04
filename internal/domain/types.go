@@ -83,6 +83,12 @@ type BookMetadata struct {
 	SelectionNote string         `json:"selection_note"`
 }
 
+// IsLecture returns true when metadata indicates a lecture/course rather than a book.
+// Lectures typically have no ISBN and no page count.
+func (m BookMetadata) IsLecture() bool {
+	return strings.TrimSpace(m.ISBN13) == "" && m.Pages == 0
+}
+
 // NormalizeAuthor extracts parenthesized text when present and non-empty.
 // Example: "로버트 C. 마틴 (Robert C. Martin)" -> "Robert C. Martin".
 func NormalizeAuthor(raw string) string {

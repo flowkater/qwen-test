@@ -77,6 +77,11 @@ func MergeBookInfo(q BookQuery, parts CollectedParts, now time.Time) (BookInfo, 
 		}
 	}
 
+	// Lectures don't have real subsections — LLM-generated depth-3+ are hallucinations.
+	if parts.Metadata.IsLecture() {
+		result.TableOfContents = truncateTOCDepth(result.TableOfContents, 2)
+	}
+
 	return result, validateTOCTree(result.TableOfContents)
 }
 
@@ -98,6 +103,24 @@ func normalizeTOCAtDepth(nodes []TOCNode, depth int) []TOCNode {
 			out[i].Children = []TOCNode{}
 		} else {
 			out[i].Children = normalizeTOCAtDepth(out[i].Children, depth+1)
+		}
+	}
+	return out
+}
+
+// truncateTOCDepth removes all children beyond maxDepth.
+// For lectures, maxDepth=2 keeps sections but strips hallucinated subsections.
+func truncateTOCDepth(nodes []TOCNode, maxDepth int) []TOCNode {
+	if nodes == nil {
+		return []TOCNode{}
+	}
+	out := make([]TOCNode, len(nodes))
+	for i, n := range nodes {
+		out[i] = n
+		if n.Depth >= maxDepth {
+			out[i].Children = []TOCNode{}
+		} else if len(n.Children) > 0 {
+			out[i].Children = truncateTOCDepth(n.Children, maxDepth)
 		}
 	}
 	return out
