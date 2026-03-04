@@ -18,6 +18,30 @@ func TestValidateMetadataJSON_AuthorRequired(t *testing.T) {
 	}
 }
 
+func TestValidateMetadataJSON_NormalizesAuthor(t *testing.T) {
+	v := NewJSONValidator()
+
+	meta, err := v.ValidateMetadataJSON([]byte(`{"author":"로버트 C. 마틴 (Robert C. Martin)"}`))
+	if err != nil {
+		t.Fatalf("should pass: %v", err)
+	}
+	if meta.Author != "Robert C. Martin" {
+		t.Fatalf("author should be normalized, got %q", meta.Author)
+	}
+}
+
+func TestValidateUnifiedJSON_NormalizesAuthor(t *testing.T) {
+	v := NewJSONValidator()
+
+	meta, _, err := v.ValidateUnifiedJSON([]byte(`{"metadata":{"author":"알렉스 쉬 (Alex Xu)"},"toc":[]}`))
+	if err != nil {
+		t.Fatalf("should pass: %v", err)
+	}
+	if meta.Author != "Alex Xu" {
+		t.Fatalf("unified author should be normalized, got %q", meta.Author)
+	}
+}
+
 func TestValidateTOCJSON_AcceptsDirectArray(t *testing.T) {
 	v := NewJSONValidator()
 

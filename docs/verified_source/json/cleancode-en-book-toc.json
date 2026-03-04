@@ -1,0 +1,44 @@
+{
+  "case_id": "cleancode",
+  "type": "book",
+  "verification_rules": {
+    "metadata_exact_match": {
+      "fields": ["author", "publisher", "isbn13"],
+      "author": "Robert C. Martin",
+      "publisher": "Addison-Wesley Professional",
+      "isbn13": "978-0132350884"
+    },
+    "toc_structure_check": {
+      "total_chapters": 8,
+      "total_appendices": 2,
+      "chapter_titles_must_contain": [
+        "Meaningful Names",
+        "Functions",
+        "Comments",
+        "Objects and Data Structures",
+        "Classes",
+        "Exceptions",
+        "Boundaries"
+      ]
+    },
+    "toc_depth_check": {
+      "max_depth_observed": 2
+    },
+    "cli_verification": {
+      "book_author": "Robert C. Martin",
+      "book_publisher": "Addison-Wesley Professional",
+      "book_isbn13": "978-0132350884",
+      "toc_min_depth1_count": 8,
+      "toc_title_keywords": [
+        "Meaningful Names",
+        "Functions",
+        "Comments",
+        "Objects and Data Structures",
+        "Classes",
+        "Exceptions",
+        "Boundaries",
+        "Unit Testing"
+      ]
+    }
+  }
+}

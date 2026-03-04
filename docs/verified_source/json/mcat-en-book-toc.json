@@ -1,0 +1,51 @@
+{
+  "case_id": "mcat",
+  "type": "book",
+  "verification_rules": {
+    "metadata_exact_match": {
+      "fields": ["publisher"],
+      "publisher": "Kaplan Test Prep",
+      "isbn13_biology": "978-1506297408",
+      "isbn13_biochemistry": "978-1506297385"
+    },
+    "toc_structure_check": {
+      "biology_chapters": 8,
+      "biochemistry_chapters": 8,
+      "biology_chapter_titles": [
+        "Cell Structure and Function",
+        "Metabolism",
+        "DNA Structure and Replication",
+        "Gene Expression and Regulation",
+        "Mendelian Genetics",
+        "Evolutionary Biology",
+        "Human Anatomy and Physiology",
+        "Ecology and Environmental Science"
+      ],
+      "biochemistry_chapter_titles": [
+        "Amino Acids and Proteins",
+        "Enzymes and Kinetics",
+        "Carbohydrates",
+        "Lipids",
+        "Nucleic Acids",
+        "Metabolic Pathways",
+        "Hormones and Signaling Pathways",
+        "Molecular Techniques"
+      ],
+      "max_depth_observed": 2
+    },
+    "cli_verification": {
+      "book_publisher": "Kaplan Test Prep",
+      "toc_min_depth1_count": 8,
+      "toc_title_keywords": [
+        "Cell Structure",
+        "Metabolism",
+        "DNA",
+        "Gene Expression",
+        "Mendelian Genetics",
+        "Human Anatomy",
+        "Enzymes",
+        "Amino Acids"
+      ]
+    }
+  }
+}

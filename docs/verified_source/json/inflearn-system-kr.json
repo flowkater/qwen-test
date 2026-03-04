@@ -1,0 +1,43 @@
+{
+  "case_id": "inflearn",
+  "type": "lecture",
+  "verification_rules": {
+    "metadata_exact_match": {
+      "fields": ["instructor", "platform"],
+      "instructor": "mindlantern",
+      "platform": "Inflearn",
+      "rating": 4.9,
+      "total_lectures": 24
+    },
+    "curriculum_structure_check": {
+      "total_sections": 4,
+      "section_titles_must_contain": [
+        "System Design",
+        "Core Goals",
+        "System Components",
+        "Architecture"
+      ],
+      "key_lectures": {
+        "3.3": {"title": "API Gateway & Load Balancer & Service Discovery"},
+        "3.7": {"title": "Message Queue & Event Broker"}
+      }
+    },
+    "cli_verification": {
+      "book_author_keywords": ["mindlantern", "성장랜턴"],
+      "book_publisher_keywords": ["Inflearn", "인프런"],
+      "toc_min_depth1_count": 4,
+      "toc_title_keywords": [
+        "System Design",
+        "시스템 디자인",
+        "Scalability",
+        "확장성",
+        "Cache",
+        "캐시",
+        "Message Queue",
+        "메시지 큐",
+        "Architecture",
+        "아키텍처"
+      ]
+    }
+  }
+}

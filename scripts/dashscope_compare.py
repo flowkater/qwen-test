@@ -231,6 +231,175 @@ def compare_case(case_id, fixture, actual):
             checks.append((f"lec[{key}].duration", "", ai.get("duration", ""), bool(ai.get("duration"))))
     return checks
 
+CLI_CASES = {
+    "cleancode": {"args": ['--isbn', '978-0132350884'], "fixture": "cleancode-en-book-toc.json"},
+    "inflearn":  {"args": ['인프런 시스템 디자인 첫걸음: 면접에서 돋보이는 백엔드 아키텍처 설계하기'], "fixture": "inflearn-system-kr.json"},
+    "realdeal":  {"args": ['리얼딜클래스 제로투원'], "fixture": "realdealclass-kr-lecture.json"},
+}
+
+def flatten_toc_titles(nodes: list[dict], depth: int = 0) -> list[str]:
+    """Recursively extract all title strings from hierarchical TOC."""
+    titles = []
+    for node in (nodes or []):
+        t = node.get("title", {})
+        if isinstance(t, dict):
+            for v in [t.get("original", ""), t.get("korean", "")]:
+                if v: titles.append(v)
+        elif isinstance(t, str) and t:
+            titles.append(t)
+        titles.extend(flatten_toc_titles(node.get("children", []), depth + 1))
+    return titles
+
+def count_depth1(nodes: list[dict]) -> int:
+    return len([n for n in (nodes or []) if n.get("depth", 0) == 1])
+
+def compare_cli_case(case_id: str, fixture: dict, cli_output: dict) -> list[tuple]:
+    """Compare Go CLI BookInfo JSON output against cli_verification rules."""
+    checks = []
+    rules = fixture["verification_rules"].get("cli_verification", {})
+    if not rules:
+        return [("cli_verification", "rules", "missing", False)]
+
+    book = cli_output.get("book", {})
+    toc = cli_output.get("table_of_contents", [])
+    all_titles = flatten_toc_titles(toc)
+
+    # Author check (keyword match)
+    author_kws = rules.get("book_author_keywords", [])
+    if not author_kws and rules.get("book_author"):
+        author_kws = [rules["book_author"]]
+    if author_kws:
+        author_val = book.get("author", "")
+        author_ok = any(flexible_match(kw, author_val) for kw in author_kws)
+        checks.append(("author", str(author_kws[0]), author_val, author_ok))
+
+    # Publisher check
+    pub_kws = rules.get("book_publisher_keywords", [])
+    if not pub_kws and rules.get("book_publisher"):
+        pub_kws = [rules["book_publisher"]]
+    if pub_kws:
+        pub_val = book.get("publisher", "")
+        pub_ok = any(flexible_match(kw, pub_val) for kw in pub_kws)
+        checks.append(("publisher", str(pub_kws[0]), pub_val, pub_ok))
+
+    # ISBN check
+    if rules.get("book_isbn13"):
+        isbn_val = book.get("isbn13", "")
+        checks.append(("isbn13", rules["book_isbn13"], isbn_val, flexible_match(rules["book_isbn13"], isbn_val)))
+
+    # TOC depth-1 count
+    if rules.get("toc_min_depth1_count"):
+        d1 = count_depth1(toc)
+        checks.append(("depth1_count", f">={rules['toc_min_depth1_count']}", d1, d1 >= rules["toc_min_depth1_count"]))
+
+    # TOC keyword presence
+    for kw in rules.get("toc_title_keywords", []):
+        found = any(flexible_match(kw, t) for t in all_titles)
+        checks.append((f'toc "{kw[:30]}"', "포함", "포함" if found else "미포함", found))
+
+    return checks
+
+def run_cli_comparison() -> int:
+    """Run Go CLI binary and compare output against verified fixtures."""
+    import subprocess
+    root = repo_root()
+    binary = root / "bin" / "bookinfo"
+    if not binary.exists():
+        print("Building binary...", flush=True)
+        subprocess.run(["make", "build"], cwd=root, check=True)
+
+    fixture_dir = root / "docs" / "verified_source" / "json"
+    output_dir = root / "bookinfo_tdd_plan_results" / "cli_comparison"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load .env for API key
+    env = os.environ.copy()
+    env_file = root / ".env"
+    if env_file.exists():
+        for line in env_file.read_text().splitlines():
+            text = line.strip()
+            if text.startswith("#") or "=" not in text: continue
+            k, v = text.split("=", 1)
+            env[k.strip()] = v.strip().strip('"').strip("'")
+    env["BOOKINFO_HTTP_TIMEOUT_SEC"] = "180"
+
+    results = []; total_pass = total_checks = 0
+    for case_id in ["cleancode", "inflearn", "realdeal"]:
+        cfg = CLI_CASES[case_id]
+        fixture = json.loads((fixture_dir / cfg["fixture"]).read_text())
+        args = [str(binary)] + cfg["args"] + ["--format", "json", "--no-cache"]
+        print(f"[cli] {case_id}: {' '.join(args)}", flush=True)
+
+        started = time.time()
+        try:
+            proc = subprocess.run(args, capture_output=True, text=True, timeout=300, env=env)
+            elapsed = time.time() - started
+        except subprocess.TimeoutExpired:
+            print(f"  -> TIMEOUT (300s)")
+            results.append({"case_id": case_id, "ok": False, "error": "timeout", "checks": [], "passed": 0, "total": 0})
+            continue
+
+        if proc.returncode != 0:
+            print(f"  -> FAILED (exit {proc.returncode}): {proc.stderr[:200]}")
+            results.append({"case_id": case_id, "ok": False, "error": proc.stderr[:300], "checks": [], "passed": 0, "total": 0})
+            continue
+
+        # Parse JSON from stdout — CLI may print status lines before JSON
+        cli_json = None
+        for line in proc.stdout.strip().splitlines():
+            line = line.strip()
+            if line.startswith("{"):
+                try:
+                    cli_json = json.loads(line)
+                    break
+                except json.JSONDecodeError:
+                    pass
+        # Try the saved file instead
+        if not cli_json:
+            # Find the most recent output file
+            import glob
+            pattern = str(root / "*_20*.json")
+            files = sorted(glob.glob(pattern), key=os.path.getmtime, reverse=True)
+            for f in files:
+                try:
+                    cli_json = json.loads(Path(f).read_text())
+                    break
+                except (json.JSONDecodeError, IOError):
+                    pass
+
+        if not cli_json:
+            print(f"  -> FAILED: no JSON output")
+            results.append({"case_id": case_id, "ok": False, "error": "no JSON", "checks": [], "passed": 0, "total": 0})
+            continue
+
+        checks = compare_cli_case(case_id, fixture, cli_json)
+        passed = sum(1 for *_, ok in checks if ok)
+        results.append({"case_id": case_id, "ok": True, "elapsed": elapsed,
+                        "checks": [(n, str(e), str(a), ok) for n, e, a, ok in checks],
+                        "passed": passed, "total": len(checks)})
+        total_pass += passed; total_checks += len(checks)
+        print(f"  -> {passed}/{len(checks)} ({elapsed:.1f}s)")
+
+    # Report
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    report_path = output_dir / f"cli_report_{ts}.md"
+    lines = [f"# Go CLI vs Verified Source 비교 리포트 ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})", ""]
+    for r in results:
+        lines.append(f"## {r['case_id']}")
+        if not r["ok"]:
+            lines.append(f"- FAILED: {r.get('error','')[:200]}"); lines.append(""); continue
+        lines.append(f"- {r['elapsed']:.1f}s")
+        lines.append(""); lines.append("| 항목 | 기준 | 실측 | 결과 |"); lines.append("|---|---|---|---|")
+        for n, e, a, ok in r["checks"]: lines.append(f"| {n} | {e} | {a} | {'PASS' if ok else 'FAIL'} |")
+        lines.append(f"\n**{r['passed']}/{r['total']} 통과**\n")
+    lines.append("## 전체 요약"); lines.append(f"- 총: **{total_pass}/{total_checks}**")
+    if total_checks: lines.append(f"- 통과율: **{100*total_pass/total_checks:.1f}%**")
+    report_path.write_text("\n".join(lines))
+    print(f"\n{'='*50}")
+    print(f"총: {total_pass}/{total_checks} ({100*total_pass/total_checks:.1f}%)" if total_checks else "N/A")
+    print(f"리포트: {report_path}")
+    return 0
+
 def main() -> int:
     root = repo_root()
     api_key = load_api_key(root)
@@ -285,4 +454,6 @@ def main() -> int:
     return 0
 
 if __name__ == "__main__":
+    if "--cli" in sys.argv:
+        raise SystemExit(run_cli_comparison())
     raise SystemExit(main())

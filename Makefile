@@ -51,7 +51,7 @@ endef
 	run run-en run-kr run-full run-full-en run-full-kr run-text \
 	run-isbn run-isbn-en run-batch \
 	run-nocache run-full-nocache \
-	compare compare-dashscope
+	compare compare-dashscope compare-cli
 
 # ── 도움말 ───────────────────────────────────────────
 help:
@@ -171,3 +171,6 @@ compare:
 
 compare-dashscope:
 	$(call exec,python3 scripts/dashscope_compare.py $(ARGS))
+
+compare-cli:
+	$(call exec,python3 scripts/dashscope_compare.py --cli $(ARGS))

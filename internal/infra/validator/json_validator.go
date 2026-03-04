@@ -19,6 +19,7 @@ func (v *JSONValidator) ValidateMetadataJSON(raw []byte) (domain.BookMetadata, e
 	if payload.Author == "" {
 		return domain.BookMetadata{}, fmt.Errorf("schema error: author is required")
 	}
+	payload.Author = domain.NormalizeAuthor(payload.Author)
 	return payload, nil
 }
 
@@ -98,6 +99,9 @@ func (v *JSONValidator) ValidateUnifiedJSON(raw []byte) (domain.BookMetadata, []
 	}
 
 	meta := unified.Metadata
+	if meta.Author != "" {
+		meta.Author = domain.NormalizeAuthor(meta.Author)
+	}
 
 	var tocNodes []domain.TOCNode
 	if len(unified.TOC) > 0 {

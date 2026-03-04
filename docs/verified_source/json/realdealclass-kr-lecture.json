@@ -1,0 +1,42 @@
+{
+  "case_id": "realdeal",
+  "type": "lecture",
+  "verification_rules": {
+    "metadata_exact_match": {
+      "fields": ["platform", "difficulty"],
+      "platform": "RealDealClass",
+      "difficulty": "(왕)초급 - 초중급",
+      "duration": "6개월"
+    },
+    "curriculum_structure_check": {
+      "total_chapters": 7,
+      "has_special_lessons": true,
+      "special_lesson_count": 5,
+      "chapter_titles_must_contain": [
+        "문장의 형태",
+        "동사의 종류",
+        "동사의 시제",
+        "수동태",
+        "준동사",
+        "긴 문장"
+      ],
+      "key_lectures": {
+        "1": {"title": "문법의 개념"},
+        "27": {"title": "to-V 1"}
+      }
+    },
+    "cli_verification": {
+      "book_publisher_keywords": ["RealDealClass", "리얼딜", "리얼딜클래스", "주식회사 리얼딜"],
+      "toc_min_depth1_count": 7,
+      "toc_title_keywords": [
+        "문장의 형태",
+        "동사의 종류",
+        "동사의 시제",
+        "수동태",
+        "준동사",
+        "긴 문장",
+        "풍부한 문장"
+      ]
+    }
+  }
+}
