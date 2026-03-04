@@ -15,3 +15,9 @@ __pycache__/
 *.json
 !docs/**/*.json
 !bookinfo_tdd_plan_results/**/*.json
+
+# Build binary
+bookinfo
+
+# OMC state
+.omc/

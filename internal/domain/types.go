@@ -6,21 +6,25 @@ import (
 	"time"
 )
 
-const DefaultModel = "qwen3.5-flash"
+const DefaultModel = "qwen3.5-flash-2026-02-23"
 const DefaultOutputFormat = "json"
 
 type BookQuery struct {
-	Title     string
-	ISBN13    string
-	Author    string
-	Lang      string
-	Format    string
-	Model     string
-	Output    string
-	NoCache   bool
-	FullMode  bool
-	BatchPath string
-	APIKey    string
+	Title        string
+	ISBN13       string
+	Author       string
+	Lang         string
+	Format       string
+	Model        string
+	Output       string
+	NoCache      bool
+	FullMode     bool
+	BatchPath    string
+	APIKey       string
+	Country      string
+	Lecture      bool
+	URL          string
+	QualityRetry bool
 }
 
 func (q BookQuery) Mode() string {
@@ -28,6 +32,13 @@ func (q BookQuery) Mode() string {
 		return "full"
 	}
 	return "basic"
+}
+
+func (q BookQuery) QueryType() string {
+	if q.Lecture {
+		return "lecture"
+	}
+	return "book"
 }
 
 func (q BookQuery) PreferredIdentifier() string {

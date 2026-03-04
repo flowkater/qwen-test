@@ -36,10 +36,11 @@ func NewClient(httpClient HTTPClient) *Client {
 // DashScope Responses API types
 
 type RequestPayload struct {
-	Model       string   `json:"model"`
+	Model       string    `json:"model"`
 	Input       []Message `json:"input"`
-	Tools       []Tool   `json:"tools,omitempty"`
-	Temperature *float64 `json:"temperature,omitempty"`
+	Tools       []Tool    `json:"tools,omitempty"`
+	Temperature *float64  `json:"temperature,omitempty"`
+	Seed        *int      `json:"seed,omitempty"`
 }
 
 type Message struct {
@@ -78,10 +79,12 @@ func (c *Client) Collect(ctx context.Context, model, apiKey, systemPrompt, userP
 		model = domain.DefaultModel
 	}
 
-	temp := 0.1
+	temp := 0.0
+	seed := 42
 	payload := RequestPayload{
 		Model:       model,
 		Temperature: &temp,
+		Seed:        &seed,
 		Input: []Message{
 			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: userPrompt},

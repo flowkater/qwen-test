@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -23,6 +25,7 @@ type fakeCollector struct {
 	reviewFn    func() ([]byte, error)
 	coursesFn   func() ([]byte, error)
 	similarFn   func() ([]byte, error)
+	unifiedFn   func(q domain.BookQuery) ([]byte, error)
 }
 
 func (f fakeCollector) appendOrder(name string) {
@@ -82,7 +85,10 @@ func (f fakeCollector) CollectSimilarBooks(context.Context, domain.BookQuery) ([
 	]`), nil
 }
 
-func (f fakeCollector) CollectUnified(context.Context, domain.BookQuery) ([]byte, error) {
+func (f fakeCollector) CollectUnified(_ context.Context, q domain.BookQuery) ([]byte, error) {
+	if f.unifiedFn != nil {
+		return f.unifiedFn(q)
+	}
 	meta := `{"title":{"original":"Clean Code","korean":"클린 코드"},"author":"Robert C. Martin","publisher":"Addison-Wesley Professional","isbn13":"978-0132350884"}`
 	toc := `[{"title":{"original":"Meaningful Names","korean":"의미있는 이름"},"depth":1,"children":[]}]`
 	return []byte(`{"metadata":` + meta + `,"toc":` + toc + `}`), nil
@@ -490,10 +496,13 @@ func TestSparsePartsDetection(t *testing.T) {
 }
 
 func TestEnrichTOCPartsCallsCollectPartTOCForSparseParts(t *testing.T) {
+	var mu sync.Mutex
 	partTOCCalls := []string{}
 	collector := fakeCollector{
 		partTOCFn: func(parentTitle, partTitle string, chapters []string) ([]byte, error) {
+			mu.Lock()
 			partTOCCalls = append(partTOCCalls, partTitle)
+			mu.Unlock()
 			// Return same chapter count but WITH sections
 			return []byte(`[{"title":{"original":"Ch1","korean":""},"depth":1,"children":[{"title":{"original":"1.1 Section","korean":""},"depth":2,"children":[]}]}]`), nil
 		},
@@ -526,8 +535,13 @@ func TestEnrichTOCPartsCallsCollectPartTOCForSparseParts(t *testing.T) {
 	if len(partTOCCalls) != 2 {
 		t.Fatalf("expected 2 partTOC calls for 2 sparse parts, got %d", len(partTOCCalls))
 	}
-	if partTOCCalls[0] != "Part 1" || partTOCCalls[1] != "Part 2" {
-		t.Fatalf("expected part titles in calls, got %v", partTOCCalls)
+	// Order is non-deterministic due to parallel execution; check both titles are present.
+	callSet := map[string]bool{}
+	for _, c := range partTOCCalls {
+		callSet[c] = true
+	}
+	if !callSet["Part 1"] || !callSet["Part 2"] {
+		t.Fatalf("expected Part 1 and Part 2 in calls, got %v", partTOCCalls)
 	}
 	// Enriched children should have depth-2 sections (countNodes=2 > original 1)
 	for i, part := range result {
@@ -653,6 +667,108 @@ func TestMergeEnrichedChildrenFiltersBoilerplate(t *testing.T) {
 	}
 }
 
+func TestEnrichTOCPartsRunsInParallel(t *testing.T) {
+	// Each part call takes ~50ms; with 3 concurrency all 3 parts should complete
+	// in ~50ms total (parallel), not ~150ms (serial).
+	const partDelay = 50 * time.Millisecond
+	var mu sync.Mutex
+	var maxConcurrent, current int
+
+	collector := fakeCollector{
+		partTOCFn: func(_, _ string, _ []string) ([]byte, error) {
+			mu.Lock()
+			current++
+			if current > maxConcurrent {
+				maxConcurrent = current
+			}
+			mu.Unlock()
+
+			time.Sleep(partDelay)
+
+			mu.Lock()
+			current--
+			mu.Unlock()
+
+			return []byte(`[{"title":{"original":"Ch1","korean":""},"depth":1,"children":[{"title":{"original":"1.1","korean":""},"depth":2,"children":[]}]}]`), nil
+		},
+	}
+
+	sparseTOC := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Part 1"}, Depth: 1, Children: []domain.TOCNode{
+			{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{}},
+		}},
+		{Title: domain.LocalizedTitle{Original: "Part 2"}, Depth: 1, Children: []domain.TOCNode{
+			{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{}},
+		}},
+		{Title: domain.LocalizedTitle{Original: "Part 3"}, Depth: 1, Children: []domain.TOCNode{
+			{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{}},
+		}},
+	}
+
+	svc := &Service{
+		Collector:         collector,
+		Validator:         fakeValidator{},
+		Cache:             &memCache{},
+		Writer:            &fakeWriter{},
+		Sleep:             func(time.Duration) {},
+		EnrichConcurrency: 3,
+	}
+	svc.defaults()
+
+	start := time.Now()
+	result := svc.enrichTOCParts(context.Background(), domain.BookQuery{Title: "Test"}, domain.BookMetadata{}, sparseTOC)
+	elapsed := time.Since(start)
+
+	if len(result) != 3 {
+		t.Fatalf("expected 3 parts, got %d", len(result))
+	}
+	// With concurrency=3 and 3 parts each taking 50ms, total should be <120ms.
+	if elapsed > 3*partDelay {
+		t.Errorf("enrichTOCParts took %v; expected parallel execution (<150ms)", elapsed)
+	}
+	// At some point 2+ goroutines should have run concurrently.
+	if maxConcurrent < 2 {
+		t.Errorf("expected concurrent execution, maxConcurrent=%d", maxConcurrent)
+	}
+}
+
+func TestEnrichTOCPartsCapsAtMaxEnrichParts(t *testing.T) {
+	var calls atomic.Int32
+	collector := fakeCollector{
+		partTOCFn: func(_, _ string, _ []string) ([]byte, error) {
+			calls.Add(1)
+			return []byte(`[{"title":{"original":"Ch1","korean":""},"depth":1,"children":[{"title":{"original":"1.1","korean":""},"depth":2,"children":[]}]}]`), nil
+		},
+	}
+
+	// Build a TOC with more than maxEnrichParts sparse parts.
+	sparseTOC := make([]domain.TOCNode, maxEnrichParts+2)
+	for i := range sparseTOC {
+		sparseTOC[i] = domain.TOCNode{
+			Title: domain.LocalizedTitle{Original: fmt.Sprintf("Part %d", i+1)},
+			Depth: 1,
+			Children: []domain.TOCNode{
+				{Title: domain.LocalizedTitle{Original: "Ch1"}, Depth: 2, Children: []domain.TOCNode{}},
+			},
+		}
+	}
+
+	svc := &Service{
+		Collector: collector,
+		Validator: fakeValidator{},
+		Cache:     &memCache{},
+		Writer:    &fakeWriter{},
+		Sleep:     func(time.Duration) {},
+	}
+	svc.defaults()
+
+	svc.enrichTOCParts(context.Background(), domain.BookQuery{Title: "Test"}, domain.BookMetadata{}, sparseTOC)
+
+	if int(calls.Load()) > maxEnrichParts {
+		t.Errorf("expected at most %d collectPartTOC calls, got %d", maxEnrichParts, calls.Load())
+	}
+}
+
 func TestMergeEnrichedChildrenNoMatchKeepsOriginal(t *testing.T) {
 	originals := []domain.TOCNode{
 		{Title: domain.LocalizedTitle{Original: "Quantum Mechanics"}, Depth: 1},
@@ -723,5 +839,155 @@ func TestProcessBatchDuplicateTitlesStillUseUniquePaths(t *testing.T) {
 	}
 	if writer.paths[0] == writer.paths[1] || writer.paths[1] == writer.paths[2] || writer.paths[0] == writer.paths[2] {
 		t.Fatalf("duplicate/sanitized-equivalent titles must not overwrite: %v", writer.paths)
+	}
+}
+
+func TestCollectUnifiedWithQualityRetryRetriesOnPoorTOC(t *testing.T) {
+	calls := 0
+	// First call returns a TOC with 0 chapters; second call returns 3 chapters.
+	emptyTOCResp := func() []byte {
+		return []byte(`{"metadata":{"title":{"original":"Test","korean":""},"author":"A","publisher":"P","isbn13":"","pages":0,"language":"","edition":"","selection_note":""},"toc":[]}`)
+	}
+	richTOCResp := func() []byte {
+		return []byte(`{"metadata":{"title":{"original":"Test","korean":""},"author":"A","publisher":"P","isbn13":"","pages":0,"language":"","edition":"","selection_note":""},"toc":[` +
+			`{"title":{"original":"Ch1","korean":""},"depth":1,"children":[]},` +
+			`{"title":{"original":"Ch2","korean":""},"depth":1,"children":[]},` +
+			`{"title":{"original":"Ch3","korean":""},"depth":1,"children":[]}` +
+			`]}`)
+	}
+
+	collector := fakeCollector{
+		unifiedFn: func(q domain.BookQuery) ([]byte, error) {
+			calls++
+			if q.QualityRetry {
+				return richTOCResp(), nil
+			}
+			return emptyTOCResp(), nil
+		},
+	}
+
+	svc := &Service{
+		Collector:      collector,
+		Validator:      fakeValidator{},
+		Cache:          &memCache{},
+		Writer:         &fakeWriter{},
+		Sleep:          func(time.Duration) {},
+		MinTOCChapters: 3,
+	}
+	svc.defaults()
+
+	meta, toc, err := svc.collectUnifiedWithQualityRetry(context.Background(), domain.BookQuery{Title: "Test"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if calls != 2 {
+		t.Fatalf("expected 2 unified calls (initial + quality retry), got %d", calls)
+	}
+	if len(toc) != 3 {
+		t.Fatalf("expected 3 TOC chapters from retry, got %d", len(toc))
+	}
+	if meta.Title.Original != "Test" {
+		t.Fatalf("expected meta from retry, got %q", meta.Title.Original)
+	}
+}
+
+func TestCollectUnifiedWithQualityRetryNoRetryWhenQualityOK(t *testing.T) {
+	calls := 0
+	richTOCResp := []byte(`{"metadata":{"title":{"original":"Test","korean":""},"author":"A","publisher":"P","isbn13":"","pages":0,"language":"","edition":"","selection_note":""},"toc":[` +
+		`{"title":{"original":"Ch1","korean":""},"depth":1,"children":[]},` +
+		`{"title":{"original":"Ch2","korean":""},"depth":1,"children":[]},` +
+		`{"title":{"original":"Ch3","korean":""},"depth":1,"children":[]}` +
+		`]}`)
+
+	collector := fakeCollector{
+		unifiedFn: func(_ domain.BookQuery) ([]byte, error) {
+			calls++
+			return richTOCResp, nil
+		},
+	}
+
+	svc := &Service{
+		Collector:      collector,
+		Validator:      fakeValidator{},
+		Cache:          &memCache{},
+		Writer:         &fakeWriter{},
+		Sleep:          func(time.Duration) {},
+		MinTOCChapters: 3,
+	}
+	svc.defaults()
+
+	_, toc, err := svc.collectUnifiedWithQualityRetry(context.Background(), domain.BookQuery{Title: "Test"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if calls != 1 {
+		t.Fatalf("expected 1 call when quality is already OK, got %d", calls)
+	}
+	if len(toc) != 3 {
+		t.Fatalf("expected 3 TOC chapters, got %d", len(toc))
+	}
+}
+
+func TestCollectUnifiedWithQualityRetryKeepsOriginalOnRetryError(t *testing.T) {
+	calls := 0
+	emptyTOCResp := []byte(`{"metadata":{"title":{"original":"Test","korean":""},"author":"A","publisher":"P","isbn13":"","pages":0,"language":"","edition":"","selection_note":""},"toc":[]}`)
+
+	collector := fakeCollector{
+		unifiedFn: func(q domain.BookQuery) ([]byte, error) {
+			calls++
+			if q.QualityRetry {
+				return nil, errors.New("retry api error")
+			}
+			return emptyTOCResp, nil
+		},
+	}
+
+	svc := &Service{
+		Collector:      collector,
+		Validator:      fakeValidator{},
+		Cache:          &memCache{},
+		Writer:         &fakeWriter{},
+		Sleep:          func(time.Duration) {},
+		MinTOCChapters: 3,
+	}
+	svc.defaults()
+
+	_, toc, err := svc.collectUnifiedWithQualityRetry(context.Background(), domain.BookQuery{Title: "Test"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if calls != 2 {
+		t.Fatalf("expected 2 calls, got %d", calls)
+	}
+	// Should return original empty TOC on retry error.
+	if len(toc) != 0 {
+		t.Fatalf("expected original empty TOC on retry error, got %d chapters", len(toc))
+	}
+}
+
+func TestTocQualityOK(t *testing.T) {
+	minChapters := 3
+
+	if tocQualityOK([]domain.TOCNode{}, minChapters) {
+		t.Fatal("empty TOC should not be OK when MinTOCChapters=3")
+	}
+	twoChapters := []domain.TOCNode{
+		{Title: domain.LocalizedTitle{Original: "Ch1"}},
+		{Title: domain.LocalizedTitle{Original: "Ch2"}},
+	}
+	if tocQualityOK(twoChapters, minChapters) {
+		t.Fatal("2 chapters should not be OK when MinTOCChapters=3")
+	}
+	threeChapters := append(twoChapters, domain.TOCNode{Title: domain.LocalizedTitle{Original: "Ch3"}})
+	if !tocQualityOK(threeChapters, minChapters) {
+		t.Fatal("3 chapters should be OK when MinTOCChapters=3")
+	}
+
+	// MinTOCChapters=0: any non-empty TOC is OK.
+	if tocQualityOK([]domain.TOCNode{}, 0) {
+		t.Fatal("empty TOC should not be OK even when MinTOCChapters=0")
+	}
+	if !tocQualityOK(twoChapters, 0) {
+		t.Fatal("non-empty TOC should be OK when MinTOCChapters=0")
 	}
 }

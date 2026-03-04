@@ -16,29 +16,29 @@ func NewCollector(client *Client) *Collector {
 }
 
 func (c *Collector) CollectMetadata(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildMetadataPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(q), app.BuildMetadataPrompt(q))
 }
 
 func (c *Collector) CollectTOC(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildTOCPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(q), app.BuildTOCPrompt(q))
 }
 
 func (c *Collector) CollectPartTOC(ctx context.Context, q domain.BookQuery, parentTitle, partTitle string, existingChapters []string) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildPartTOCPrompt(q, parentTitle, partTitle, existingChapters))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(q), app.BuildPartTOCPrompt(q, parentTitle, partTitle, existingChapters))
 }
 
 func (c *Collector) CollectReview(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildReviewPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(q), app.BuildReviewPrompt(q))
 }
 
 func (c *Collector) CollectCourses(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildCoursesPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(q), app.BuildCoursesPrompt(q))
 }
 
 func (c *Collector) CollectSimilarBooks(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildSimilarPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(q), app.BuildSimilarPrompt(q))
 }
 
 func (c *Collector) CollectUnified(ctx context.Context, q domain.BookQuery) ([]byte, error) {
-	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(), app.BuildUnifiedPrompt(q))
+	return c.Client.Collect(ctx, q.Model, q.APIKey, app.GetSystemPrompt(q), app.BuildUnifiedPrompt(q))
 }

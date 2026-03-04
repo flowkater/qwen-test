@@ -21,12 +21,19 @@ var allowedFormat = map[string]struct{}{
 	"text": {},
 }
 
+var allowedCountry = map[string]struct{}{
+	"us": {},
+	"kr": {},
+	"jp": {},
+	"tw": {},
+}
+
 func ValidateQuery(q BookQuery) error {
 	title := strings.TrimSpace(q.Title)
 	isbn := strings.TrimSpace(q.ISBN13)
 	batch := strings.TrimSpace(q.BatchPath)
 
-	if batch == "" && title == "" && isbn == "" {
+	if !q.Lecture && batch == "" && title == "" && isbn == "" {
 		return ErrMissingQuery
 	}
 	if q.Title != "" && title == "" {
@@ -46,6 +53,40 @@ func ValidateQuery(q BookQuery) error {
 	if q.BatchPath != "" && batch == "" {
 		return ErrInvalidBatchPath
 	}
+
+	// Lecture mode: --url and --country required
+	if q.Lecture {
+		if strings.TrimSpace(q.URL) == "" {
+			return ErrMissingURL
+		}
+		country := strings.ToLower(strings.TrimSpace(q.Country))
+		if country == "" {
+			return ErrMissingCountry
+		}
+		if _, ok := allowedCountry[country]; !ok {
+			return ErrInvalidCountry
+		}
+	}
+
+	// ISBN mode: --country required
+	if isbn != "" {
+		country := strings.ToLower(strings.TrimSpace(q.Country))
+		if country == "" {
+			return ErrMissingCountry
+		}
+		if _, ok := allowedCountry[country]; !ok {
+			return ErrInvalidCountry
+		}
+	}
+
+	// Validate country if provided (non-empty) outside lecture/isbn modes
+	if !q.Lecture && isbn == "" && strings.TrimSpace(q.Country) != "" {
+		country := strings.ToLower(strings.TrimSpace(q.Country))
+		if _, ok := allowedCountry[country]; !ok {
+			return ErrInvalidCountry
+		}
+	}
+
 	if q.Output != "" {
 		info, err := os.Stat(q.Output)
 		if err == nil && info.IsDir() {

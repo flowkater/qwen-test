@@ -178,7 +178,7 @@ func TestRunnerISBNSearchNoDuplicateWarning(t *testing.T) {
 		Stdout: stdout,
 		Stderr: stderr,
 	}
-	code := r.Run(context.Background(), []string{"--isbn", "9781506297545"})
+	code := r.Run(context.Background(), []string{"--isbn", "9781506297545", "--country", "us"})
 	if code != 0 {
 		t.Fatalf("expected success, got %d; stderr: %s", code, stderr.String())
 	}

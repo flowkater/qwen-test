@@ -70,6 +70,20 @@ func ParseArgs(args []string, stderr io.Writer) (domain.BookQuery, error) {
 				return domain.BookQuery{}, fmt.Errorf("missing value for %s", arg)
 			}
 			query.BatchPath = strings.TrimSpace(args[i])
+		case "--country":
+			i++
+			if i >= len(args) {
+				return domain.BookQuery{}, fmt.Errorf("missing value for --country")
+			}
+			query.Country = strings.ToLower(strings.TrimSpace(args[i]))
+		case "--lecture":
+			query.Lecture = true
+		case "--url":
+			i++
+			if i >= len(args) {
+				return domain.BookQuery{}, fmt.Errorf("missing value for --url")
+			}
+			query.URL = strings.TrimSpace(args[i])
 		case "--no-cache":
 			query.NoCache = true
 		case "--help", "-h":
@@ -97,11 +111,12 @@ func HelpText() string {
 	return strings.TrimSpace(`
 Usage:
   bookinfo <title> [flags]
-  bookinfo --isbn <isbn13> [flags]
+  bookinfo --isbn <isbn13> --country <country> [flags]
+  bookinfo --lecture --url <url> --country <country> [flags]
   bookinfo --batch <file> [flags]
 
 Flags:
-  --isbn                    ISBN-13 query
+  --isbn                    ISBN-13 query (requires --country)
   --author, -a              author
   --lang, -l                ko|en|ja|zh-tw
   --full, -f                collect metadata+toc+review+courses+similar
@@ -111,16 +126,10 @@ Flags:
   --output, -o              output path
   --batch, -b               batch text file (one title per line)
   --no-cache                skip cache read but still write refreshed cache
+  --country                 country code us|kr|jp|tw (required for --isbn and --lecture)
+  --lecture                 lecture/course mode (requires --url and --country)
+  --url                     lecture site URL (required for --lecture)
 `)
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, v := range values {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }
 
 func ValidateLangMessage(lang string) string {

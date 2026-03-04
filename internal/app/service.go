@@ -10,17 +10,25 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
 	"github.com/flowkater/qwen/bookinfo/internal/domain"
 )
 
+const (
+	defaultEnrichConcurrency = 3
+	maxEnrichParts           = 5
+)
+
 type Service struct {
-	Collector Collector
-	Validator Validator
-	Cache     Cache
-	Writer    Writer
+	Collector         Collector
+	Validator         Validator
+	Cache             Cache
+	Writer            Writer
+	EnrichConcurrency int
+	MinTOCChapters    int
 
 	Backoff domain.BackoffConfig
 	Clock   Clock
@@ -53,6 +61,9 @@ func (s *Service) defaults() {
 			return time.Duration(rand.Int63n(int64(max) + 1))
 		}
 	}
+	if s.EnrichConcurrency <= 0 {
+		s.EnrichConcurrency = defaultEnrichConcurrency
+	}
 }
 
 func (s *Service) ProcessOne(ctx context.Context, q domain.BookQuery) (ProcessResult, error) {
@@ -76,12 +87,8 @@ func (s *Service) ProcessOne(ctx context.Context, q domain.BookQuery) (ProcessRe
 	}
 
 	var parts domain.CollectedParts
-	// Single unified call: metadata + TOC in one DashScope request
-	unifiedRaw, err := s.collectUnified(ctx, q)
-	if err != nil {
-		return ProcessResult{}, err
-	}
-	meta, toc, err := s.Validator.ValidateUnifiedJSON(unifiedRaw)
+	// Single unified call: metadata + TOC in one DashScope request, with quality retry.
+	meta, toc, err := s.collectUnifiedWithQualityRetry(ctx, q)
 	if err != nil {
 		return ProcessResult{}, err
 	}
@@ -217,18 +224,6 @@ func (s *Service) batchOutputPath(itemQuery domain.BookQuery, outputRoot string,
 	}
 }
 
-func (s *Service) collectMetadata(ctx context.Context, q domain.BookQuery) (domain.BookMetadata, error) {
-	return collectWithRetry(s, ctx, func() ([]byte, error) {
-		return s.Collector.CollectMetadata(ctx, q)
-	}, s.Validator.ValidateMetadataJSON)
-}
-
-func (s *Service) collectTOC(ctx context.Context, q domain.BookQuery) ([]domain.TOCNode, error) {
-	return collectWithRetry(s, ctx, func() ([]byte, error) {
-		return s.Collector.CollectTOC(ctx, q)
-	}, s.Validator.ValidateTOCJSON)
-}
-
 func (s *Service) collectReview(ctx context.Context, q domain.BookQuery) (domain.ReviewInfo, error) {
 	return collectWithRetry(s, ctx, func() ([]byte, error) {
 		return s.Collector.CollectReview(ctx, q)
@@ -288,33 +283,62 @@ func collectWithRetry[T any](svc *Service, ctx context.Context, collect func() (
 // enrichTOCParts detects depth-1 parts whose chapters all have empty children,
 // then makes individual CollectPartTOC calls per part to get section-level detail.
 // This solves the output-token limitation of single-call TOC for multi-volume sets.
+// Parts are enriched concurrently up to EnrichConcurrency goroutines, capped at maxEnrichParts.
 func (s *Service) enrichTOCParts(ctx context.Context, q domain.BookQuery, meta domain.BookMetadata, toc []domain.TOCNode) []domain.TOCNode {
 	sparse := sparseParts(toc)
 	if len(sparse) == 0 {
 		return toc
 	}
 
+	// Cap to maxEnrichParts to avoid runaway API calls on huge multi-volume sets.
+	if len(sparse) > maxEnrichParts {
+		sparse = sparse[:maxEnrichParts]
+	}
+
 	enriched := make([]domain.TOCNode, len(toc))
 	copy(enriched, toc)
 
-	for _, idx := range sparse {
-		part := toc[idx]
-		existingChapters := make([]string, len(part.Children))
-		for i, ch := range part.Children {
-			existingChapters[i] = ch.Title.Original
-		}
+	type result struct {
+		idx      int
+		children []domain.TOCNode
+	}
 
-		children, err := s.collectPartTOC(ctx, q, meta.Title.Original, part.Title.Original, existingChapters)
-		if err != nil {
-			continue // keep original on failure
-		}
-		// Merge: map enriched chapters back to originals by title similarity.
-		// This filters out boilerplate (Preface, Getting Started, etc.) that
-		// the LLM may add despite prompt instructions.
-		merged := mergeEnrichedChildren(part.Children, children)
-		if countTOCNodes(merged) > countTOCNodes(part.Children) {
-			enriched[idx].Children = merged
-		}
+	sem := make(chan struct{}, s.EnrichConcurrency)
+	results := make(chan result, len(sparse))
+	var wg sync.WaitGroup
+
+	for _, idx := range sparse {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			part := toc[idx]
+			existingChapters := make([]string, len(part.Children))
+			for i, ch := range part.Children {
+				existingChapters[i] = ch.Title.Original
+			}
+
+			children, err := s.collectPartTOC(ctx, q, meta.Title.Original, part.Title.Original, existingChapters)
+			if err != nil {
+				return // keep original on failure
+			}
+			// Merge: map enriched chapters back to originals by title similarity.
+			// This filters out boilerplate (Preface, Getting Started, etc.) that
+			// the LLM may add despite prompt instructions.
+			merged := mergeEnrichedChildren(part.Children, children)
+			if countTOCNodes(merged) > countTOCNodes(part.Children) {
+				results <- result{idx: idx, children: merged}
+			}
+		}(idx)
+	}
+
+	wg.Wait()
+	close(results)
+
+	for r := range results {
+		enriched[r.idx].Children = r.children
 	}
 	return enriched
 }
@@ -443,4 +467,60 @@ func (s *Service) collectUnified(ctx context.Context, q domain.BookQuery) ([]byt
 	return collectWithRetry(s, ctx, func() ([]byte, error) {
 		return s.Collector.CollectUnified(ctx, q)
 	}, func(raw []byte) ([]byte, error) { return raw, nil })
+}
+
+// tocQualityOK checks whether the TOC meets the minimum quality threshold.
+// It requires at least minTopLevel depth-1 nodes. When minTopLevel is 0,
+// any non-empty TOC is accepted.
+func tocQualityOK(toc []domain.TOCNode, minTopLevel int) bool {
+	if minTopLevel <= 0 {
+		return len(toc) > 0
+	}
+	return len(toc) >= minTopLevel
+}
+
+// collectUnifiedWithQualityRetry runs the unified collect call and, if the TOC
+// quality is insufficient, retries with QualityRetry=true so that prompts
+// include the quality-retry suffix for enhanced instructions.
+func (s *Service) collectUnifiedWithQualityRetry(ctx context.Context, q domain.BookQuery) (domain.BookMetadata, []domain.TOCNode, error) {
+	unifiedRaw, err := s.collectUnified(ctx, q)
+	if err != nil {
+		return domain.BookMetadata{}, nil, err
+	}
+	meta, toc, err := s.Validator.ValidateUnifiedJSON(unifiedRaw)
+	if err != nil {
+		return domain.BookMetadata{}, nil, err
+	}
+
+	minChapters := s.MinTOCChapters
+	if minChapters <= 0 {
+		if q.Lecture {
+			minChapters = 2
+		} else {
+			minChapters = 3
+		}
+	}
+
+	// If quality is already sufficient or caller already set QualityRetry, return as-is.
+	if tocQualityOK(toc, minChapters) || q.QualityRetry {
+		return meta, toc, nil
+	}
+
+	// Quality gate failed — retry once with the quality-retry prompt suffix.
+	retryQ := q
+	retryQ.QualityRetry = true
+	retryRaw, err := s.collectUnified(ctx, retryQ)
+	if err != nil {
+		// Return original result on retry error.
+		return meta, toc, nil
+	}
+	retryMeta, retryTOC, err := s.Validator.ValidateUnifiedJSON(retryRaw)
+	if err != nil {
+		return meta, toc, nil
+	}
+	// Use retry result only if it's better quality.
+	if tocQualityOK(retryTOC, minChapters) {
+		return retryMeta, retryTOC, nil
+	}
+	return meta, toc, nil
 }

@@ -14,6 +14,8 @@ TIMEOUT_SEC ?= 120
 # BATCH        배치 파일 경로       (필수 for batch)
 # NOCACHE      1 로 설정시 --no-cache (선택)
 # FULL         1 로 설정시 --full   (선택)
+# COUNTRY      국가 us|kr|jp|tw    (isbn/lecture 계열 필수)
+# URL          강의 URL             (lecture 계열 필수)
 # ARGS         추가 플래그          (선택)
 
 # 공통 플래그 자동 조합
@@ -39,6 +41,12 @@ endif
 ifeq ($(FULL),1)
 _FLAGS += --full
 endif
+ifdef COUNTRY
+_FLAGS += --country $(COUNTRY)
+endif
+ifdef URL
+_FLAGS += --url "$(URL)"
+endif
 
 # .env 로딩 + 실행을 한 쉘에서 처리하는 매크로
 # $(1) = 바이너리 인자 전체
@@ -49,8 +57,9 @@ endef
 
 .PHONY: help build test clean \
 	run run-en run-kr run-full run-full-en run-full-kr run-text \
-	run-isbn run-isbn-en run-batch \
+	run-isbn run-isbn-en run-isbn-kr run-isbn-us run-batch \
 	run-nocache run-full-nocache \
+	run-lecture run-lecture-kr \
 	compare compare-dashscope compare-cli
 
 # ── 도움말 ───────────────────────────────────────────
@@ -76,6 +85,12 @@ help:
 	@echo "ISBN 실행:"
 	@echo "  make run-isbn ISBN='978-0132350884'              ISBN 조회"
 	@echo "  make run-isbn-en ISBN='978-0132350884'           ISBN + 영문"
+	@echo "  make run-isbn-kr ISBN='978-0132350884'           ISBN + 한국 (country=kr, lang=ko)"
+	@echo "  make run-isbn-us ISBN='978-0132350884'           ISBN + 미국 (country=us, lang=en)"
+	@echo ""
+	@echo "강의 실행:"
+	@echo "  make run-lecture URL='https://...' COUNTRY=kr    강의 조회"
+	@echo "  make run-lecture-kr URL='https://www.inflearn.com/course/...'  강의 + 한국어"
 	@echo ""
 	@echo "배치:"
 	@echo "  make run-batch BATCH='titles.txt'                배치 실행"
@@ -92,6 +107,8 @@ help:
 	@echo "  FORMAT=json|text       출력 형식"
 	@echo "  NOCACHE=1              캐시 무시"
 	@echo "  FULL=1                 풀모드"
+	@echo "  COUNTRY=us|kr|jp|tw    국가 (isbn/lecture 계열 필수)"
+	@echo "  URL='https://...'      강의 URL (lecture 계열 필수)"
 	@echo "  TIMEOUT_SEC=180        타임아웃 (기본 120)"
 	@echo "  ARGS='--extra-flag'    추가 플래그"
 	@echo ""
@@ -157,6 +174,23 @@ run-isbn: build
 run-isbn-en: build
 	@if [[ -z "$(ISBN)" ]]; then echo "ERROR: ISBN 필수. 예) make run-isbn-en ISBN='978-0132350884'"; exit 1; fi
 	$(call exec,$(BIN) --isbn "$(ISBN)" --lang en $(_FLAGS) $(ARGS))
+
+run-isbn-kr: build
+	@if [[ -z "$(ISBN)" ]]; then echo "ERROR: ISBN 필수. 예) make run-isbn-kr ISBN='978-0132350884'"; exit 1; fi
+	$(call exec,$(BIN) --isbn "$(ISBN)" --country kr --lang ko $(_FLAGS) $(ARGS))
+
+run-isbn-us: build
+	@if [[ -z "$(ISBN)" ]]; then echo "ERROR: ISBN 필수. 예) make run-isbn-us ISBN='978-0132350884'"; exit 1; fi
+	$(call exec,$(BIN) --isbn "$(ISBN)" --country us --lang en $(_FLAGS) $(ARGS))
+
+run-lecture: build
+	@if [[ -z "$(URL)" ]]; then echo "ERROR: URL 필수. 예) make run-lecture URL='https://...' COUNTRY=kr"; exit 1; fi
+	@if [[ -z "$(COUNTRY)" ]]; then echo "ERROR: COUNTRY 필수. 예) make run-lecture URL='https://...' COUNTRY=kr"; exit 1; fi
+	$(call exec,$(BIN) --lecture --url "$(URL)" --country $(COUNTRY) $(_FLAGS) $(ARGS))
+
+run-lecture-kr: build
+	@if [[ -z "$(URL)" ]]; then echo "ERROR: URL 필수. 예) make run-lecture-kr URL='https://www.inflearn.com/course/...'"; exit 1; fi
+	$(call exec,$(BIN) --lecture --url "$(URL)" --country kr --lang ko $(_FLAGS) $(ARGS))
 
 # ── 실행: 배치 ───────────────────────────────────────
 

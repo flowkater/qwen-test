@@ -7,7 +7,7 @@ import (
 	"github.com/flowkater/qwen/bookinfo/internal/domain"
 )
 
-const SystemPromptBookInfo = `You are a precise book/lecture metadata and table of contents extraction engine.
+const SystemPromptBook = `You are a precise book metadata and table of contents extraction engine.
 
 CRITICAL RULES:
 1. Return ONLY valid JSON. No markdown, no explanation, no code blocks.
@@ -23,8 +23,33 @@ CRITICAL RULES:
 7. If a value is unknown, keep schema shape and use "" for strings, 0 for numbers, [] for arrays.
 8. Prefer canonical data from the ORIGINAL edition unless the query explicitly requests another language/edition.`
 
+const SystemPromptLecture = `You are a precise lecture/course metadata and curriculum extraction engine.
+
+CRITICAL RULES:
+1. Return ONLY valid JSON. No markdown, no explanation, no code blocks.
+2. Follow the EXACT JSON schema requested in the user prompt.
+3. Keep all extracted text in the resource's ORIGINAL language unless explicitly asked to translate.
+4. NEVER translate section titles, instructor names, or platform names by default.
+5. CURRICULUM MUST BE DEEPLY HIERARCHICAL:
+   - Every module MUST include its lessons as children nodes.
+   - Lessons with sub-topics MUST include them as nested children.
+   - Use web_search to find the actual detailed curriculum when available.
+6. Include bonus content/appendices when available.
+7. If a value is unknown, keep schema shape and use "" for strings, 0 for numbers, [] for arrays.
+8. Prefer the most up-to-date version of the lecture unless the query requests a specific version.`
+
+// SystemPromptBookInfo is kept for backward compatibility.
+const SystemPromptBookInfo = SystemPromptBook
+
+func GetSystemPrompt(q domain.BookQuery) string {
+	if q.Lecture {
+		return SystemPromptLecture
+	}
+	return SystemPromptBook
+}
+
 func BuildTOCPrompt(q domain.BookQuery) string {
-	return commonLead(q) + `
+	return bookLead(q) + `
 
 Return ONLY valid JSON array (no markdown, no explanation):
 [{"title":{"original":"Chapter 1: Example","korean":""},"depth":1,"children":[{"title":{"original":"1.1 Section","korean":""},"depth":2,"children":[]}]}]
@@ -40,11 +65,11 @@ Rules:
 - Depth: 1=part/chapter, 2=section, 3=subsection, 4=sub-subsection.
 - A typical textbook has at least 2-3 levels. Include them all.
 - Include appendices/annexes when available.
-- Return ONLY the JSON array.`
+- Return ONLY the JSON array.` + qualityRetrySuffix(q)
 }
 
 func BuildMetadataPrompt(q domain.BookQuery) string {
-	return commonLead(q) + `
+	return bookLead(q) + `
 
 Return ONLY valid JSON object (no markdown, no explanation):
 {"title":{"original":"","korean":""},"author":"","publisher":"","published_date":"","isbn13":"","pages":0,"language":"","edition":"","selection_note":""}
@@ -57,31 +82,39 @@ Rules:
 - isbn13: 13-digit ISBN string with hyphens when known (example: "978-0132350884").
 - Prefer original-edition metadata unless query explicitly requests another language/edition.
 - If unknown, use "" for text fields and 0 for pages.
-- Return ONLY the JSON object.`
+- Return ONLY the JSON object.` + qualityRetrySuffix(q)
 }
 
 func BuildReviewPrompt(q domain.BookQuery) string {
-	return commonLead(q) + "\nReturn ONLY valid JSON object (no markdown, no explanation): " +
+	return bookLead(q) + "\nReturn ONLY valid JSON object (no markdown, no explanation): " +
 		`{"rating":0,"summary":{"pros":[],"cons":[]},"recommended_level":"","prerequisites":[]}` +
-		"\nReturn review with rating, summary.pros, summary.cons, recommended_level, prerequisites."
+		"\nReturn review with rating, summary.pros, summary.cons, recommended_level, prerequisites." +
+		qualityRetrySuffix(q)
 }
 
 func BuildCoursesPrompt(q domain.BookQuery) string {
-	return commonLead(q) + "\nReturn ONLY valid JSON array (no markdown, no explanation): " +
+	return bookLead(q) + "\nReturn ONLY valid JSON array (no markdown, no explanation): " +
 		`[{"title":"","platform":"","instructor":"","curriculum":[],"rating":0,"price":"","url":""}]` +
-		"\nReturn related courses with title, platform, instructor, curriculum(array), rating, price, url."
+		"\nReturn related courses with title, platform, instructor, curriculum(array), rating, price, url." +
+		qualityRetrySuffix(q)
 }
 
 func BuildSimilarPrompt(q domain.BookQuery) string {
-	return commonLead(q) + "\nReturn ONLY valid JSON array (no markdown, no explanation): " +
+	return bookLead(q) + "\nReturn ONLY valid JSON array (no markdown, no explanation): " +
 		`[{"title":{"original":"","korean":""},"author":"","brief_description":"","difficulty_comparison":""}]` +
-		"\nReturn 3-5 similar books including title(original/korean), author, brief_description, difficulty_comparison."
+		"\nReturn 3-5 similar books including title(original/korean), author, brief_description, difficulty_comparison." +
+		qualityRetrySuffix(q)
 }
 
-
-
 func BuildUnifiedPrompt(q domain.BookQuery) string {
-	return commonLead(q) + `
+	if q.Lecture {
+		return buildLectureUnifiedPrompt(q)
+	}
+	return buildBookUnifiedPrompt(q)
+}
+
+func buildBookUnifiedPrompt(q domain.BookQuery) string {
+	return bookLead(q) + `
 
 Return ONLY valid JSON object (no markdown, no explanation) with this exact structure:
 {
@@ -137,7 +170,60 @@ TOC rules (CRITICAL — follow strictly):
 
 General:
 - If unknown, use "" for text fields and 0 for numbers.
-- Return ONLY the JSON object.`
+- Return ONLY the JSON object.` + qualityRetrySuffix(q)
+}
+
+func buildLectureUnifiedPrompt(q domain.BookQuery) string {
+	return lectureLead(q) + `
+
+Return ONLY valid JSON object (no markdown, no explanation) with this exact structure:
+{
+  "metadata": {
+    "title": {"original": "", "korean": ""},
+    "author": "",
+    "publisher": "",
+    "published_date": "",
+    "isbn13": "",
+    "pages": 0,
+    "language": "",
+    "edition": "",
+    "selection_note": ""
+  },
+  "toc": [
+    {
+      "title": {"original": "Module 1: Example", "korean": ""},
+      "depth": 1,
+      "children": [
+        {
+          "title": {"original": "1.1 Lesson Name", "korean": ""},
+          "depth": 2,
+          "children": []
+        }
+      ]
+    }
+  ]
+}
+
+Metadata rules:
+- metadata.title.original: canonical title in ORIGINAL language.
+- metadata.title.korean: Korean translation only if confidently known, otherwise "".
+- metadata.author: instructor name in ORIGINAL language.
+- metadata.publisher: platform name (e.g. Udemy, Coursera, YouTube).
+- metadata.isbn13: leave "" for lectures (no ISBN).
+- metadata.pages: leave 0 for lectures.
+
+Curriculum rules (CRITICAL — follow strictly):
+- Use web_search to find the lecture's ACTUAL detailed curriculum.
+- Include ALL modules, lessons, and sub-topics as a deeply nested tree.
+- Each module (depth 1) MUST contain its lessons (depth 2) as children.
+- Lessons with sub-topics MUST include them as children (depth 3+).
+- Do NOT return only top-level module names with empty children.
+- Include bonus sections when available.
+- Do NOT translate title.original. Keep in original language.
+
+General:
+- If unknown, use "" for text fields and 0 for numbers.
+- Return ONLY the JSON object.` + qualityRetrySuffix(q)
 }
 
 // BuildPartTOCPrompt creates a prompt for enriching a specific part/volume's TOC
@@ -162,7 +248,6 @@ func BuildPartTOCPrompt(q domain.BookQuery, parentTitle string, partTitle string
 		builder.WriteString(fmt.Sprintf("- %s\n", ch))
 	}
 	builder.WriteString(`
-
 CRITICAL: Return ONLY the chapters listed above. Do NOT add new chapters.
 Do NOT include front matter (Preface, Getting Started, About, How to Use, etc.).
 Return ONLY valid JSON array:
@@ -181,17 +266,13 @@ Rules:
 	return builder.String()
 }
 
-func GetSystemPrompt() string {
-	return SystemPromptBookInfo
-}
-
-func commonLead(q domain.BookQuery) string {
+func bookLead(q domain.BookQuery) string {
 	identifier := q.Title
 	if q.ISBN13 != "" {
 		identifier = fmt.Sprintf("ISBN-13: %s", q.ISBN13)
 	}
 	builder := strings.Builder{}
-	builder.WriteString("Find canonical book/lecture data for: ")
+	builder.WriteString("Find canonical book data for: ")
 	builder.WriteString(identifier)
 	if q.Author != "" {
 		builder.WriteString(" author=" + q.Author)
@@ -208,4 +289,47 @@ func commonLead(q domain.BookQuery) string {
 	builder.WriteString(". If duplicate titles exist choose most popular; if same author/title choose latest edition.")
 	builder.WriteString(" Keep title shape as {\"original\":\"\",\"korean\":\"\"}; original is mandatory and korean is optional.")
 	return builder.String()
+}
+
+func lectureLead(q domain.BookQuery) string {
+	identifier := q.Title
+	if q.URL != "" {
+		identifier = fmt.Sprintf("%s (URL: %s)", q.Title, q.URL)
+	}
+	builder := strings.Builder{}
+	builder.WriteString("Find canonical lecture/course data for: ")
+	builder.WriteString(identifier)
+	if q.Author != "" {
+		builder.WriteString(" instructor=" + q.Author)
+	}
+	if q.Lang != "" {
+		builder.WriteString(" lang=" + q.Lang)
+		builder.WriteString(fmt.Sprintf(
+			"\nIMPORTANT LANGUAGE RULE: This is a %s-language resource. "+
+				"Keep title.original, module/lesson titles, instructor, and platform in %s. "+
+				"Do NOT translate to other languages unless explicitly requested.",
+			q.Lang, q.Lang,
+		))
+	}
+	if q.Country != "" {
+		builder.WriteString(fmt.Sprintf(" country=%s", q.Country))
+	}
+	builder.WriteString(". If duplicate titles exist choose most popular; if same instructor/title choose latest version.")
+	builder.WriteString(" Keep title shape as {\"original\":\"\",\"korean\":\"\"}; original is mandatory and korean is optional.")
+	return builder.String()
+}
+
+// qualityRetrySuffix appends extra instructions when this is a quality retry attempt.
+func qualityRetrySuffix(q domain.BookQuery) string {
+	if !q.QualityRetry {
+		return ""
+	}
+	return `
+
+QUALITY RETRY INSTRUCTIONS:
+This is a retry attempt due to insufficient quality in the previous response.
+- Be more thorough and detailed than your previous attempt.
+- Ensure ALL fields are populated with real data, not empty strings or zeros.
+- Use multiple web_search queries to verify and enrich the data.
+- Do NOT return placeholder or minimal data.`
 }

@@ -15,7 +15,9 @@ func CacheKey(q BookQuery) string {
 		model = DefaultModel
 	}
 	mode := q.Mode()
-	raw := strings.Join([]string{identifier, author, lang, model, mode}, "|")
+	country := strings.ToLower(strings.TrimSpace(q.Country))
+	queryType := q.QueryType()
+	raw := strings.Join([]string{identifier, author, lang, model, mode, country, queryType}, "|")
 	sum := sha256.Sum256([]byte(raw))
 	return hex.EncodeToString(sum[:])
 }

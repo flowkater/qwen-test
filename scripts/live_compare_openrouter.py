@@ -3,7 +3,7 @@
 Verified Source vs OpenRouter 실요청 비교 스크립트
 
 기본값:
-- model: qwen/qwen3.5-flash-02-23
+- model: qwen3.5-flash-2026-02-23
 - search_mode: auto
 - plugins: [{id:web, engine:native, max_results:5}]
 """
@@ -24,7 +24,7 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-DEFAULT_MODEL = "qwen/qwen3.5-flash-02-23"
+DEFAULT_MODEL = "qwen3.5-flash-2026-02-23"
 CASE_ORDER = ["cleancode", "mcat", "inflearn", "realdeal"]
 CASE_TO_FIXTURE = {
     "cleancode": "cleancode-en-book-toc.json",
@@ -34,7 +34,7 @@ CASE_TO_FIXTURE = {
 }
 PROMPT_MODES = ["strict-json", "soft-json", "two-step-json"]
 CASE_TO_QUERY = {
-    "cleancode": 'Clean Code: A Handbook of Agile Software Craftsmanship by Robert C. Martin (English, original edition)',
+    "cleancode": "Clean Code: A Handbook of Agile Software Craftsmanship by Robert C. Martin (English, original edition)",
     "mcat": "MCAT Biological & Biochemical Foundations - Kaplan Biology Review + Biochemistry Review (English, latest edition)",
     "inflearn": '"시스템 디자인 첫걸음" 인프런 강의 (강사: mindlantern)',
     "realdeal": '"리얼딜 클라쓰 ZERO TO ONE" 영어 문법 온라인 강의',
@@ -130,7 +130,9 @@ def parse_args() -> argparse.Namespace:
         choices=["native", "exa"],
         help="web plugin engine",
     )
-    parser.add_argument("--max-results", type=int, default=5, help="web plugin max_results")
+    parser.add_argument(
+        "--max-results", type=int, default=5, help="web plugin max_results"
+    )
     parser.add_argument(
         "--cases",
         default="all",
@@ -154,7 +156,9 @@ def parse_args() -> argparse.Namespace:
         default=2.0,
         help="재시도 기본 대기(초, 지수백오프 적용)",
     )
-    parser.add_argument("--api-key-env", default="OPENROUTER_API_KEY", help="API 키 환경변수명")
+    parser.add_argument(
+        "--api-key-env", default="OPENROUTER_API_KEY", help="API 키 환경변수명"
+    )
     return parser.parse_args()
 
 
@@ -224,20 +228,20 @@ def make_prompt(case_id: str, prompt_mode: str) -> str:
     schema = get_case_schema(case_id)
     if prompt_mode == "strict-json":
         return (
-            f'웹 검색을 사용해 쿼리 {query} 를 확인하고 아래 JSON 스키마로만 답하세요.\n'
+            f"웹 검색을 사용해 쿼리 {query} 를 확인하고 아래 JSON 스키마로만 답하세요.\n"
             + schema
             + "\n설명문/마크다운 없이 JSON만 출력."
         )
     if prompt_mode == "soft-json":
         return (
-            f'웹 검색으로 쿼리 {query} 정보를 최대한 수집하세요.\n'
+            f"웹 검색으로 쿼리 {query} 정보를 최대한 수집하세요.\n"
             "가능하면 아래 스키마에 맞춰 JSON으로 답하되, 확신 없는 값은 빈 값으로 두세요.\n"
             + schema
             + "\nJSON 우선이며, 불가하면 마지막에 JSON 블록을 반드시 포함하세요."
         )
     if prompt_mode == "two-step-json":
         return (
-            f'웹 검색으로 쿼리 {query} 정보를 먼저 자유형으로 정리하세요.\n'
+            f"웹 검색으로 쿼리 {query} 정보를 먼저 자유형으로 정리하세요.\n"
             "아래 형식을 따르세요:\n"
             "1) 핵심 사실(메타데이터)\n2) 목차/커리큘럼 핵심 항목\n3) 숫자값(챕터수/강의수/평점/길이)\n"
             "4) 불확실한 항목\n"
@@ -292,7 +296,9 @@ def request_once(
                     "error_body": raw_text,
                     "request_payload": payload,
                 }
-            message = choices[0].get("message", {}) if isinstance(choices[0], dict) else {}
+            message = (
+                choices[0].get("message", {}) if isinstance(choices[0], dict) else {}
+            )
             content = message.get("content")
             if not isinstance(content, str):
                 return {
@@ -316,7 +322,9 @@ def request_once(
                 "content": content,
                 "outer_response": outer,
                 "usage": usage,
-                "web_search_requests": web_requests if web_requests is not None else "N/A",
+                "web_search_requests": (
+                    web_requests if web_requests is not None else "N/A"
+                ),
                 "request_payload": payload,
             }
     except _RequestTimeout:
@@ -630,7 +638,11 @@ def flexible_match(expected: str, actual: str) -> bool:
 
     exp_compact = _normalize_compact(expected)
     act_compact = _normalize_compact(actual)
-    if exp_compact and act_compact and (exp_compact == act_compact or exp_compact in act_compact):
+    if (
+        exp_compact
+        and act_compact
+        and (exp_compact == act_compact or exp_compact in act_compact)
+    ):
         return True
 
     exp_variants = _variants_for_flexible_compare(expected)
@@ -643,27 +655,50 @@ def flexible_match(expected: str, actual: str) -> bool:
             act_v_norm = normalize_for_compare(act_variant)
             if not act_v_norm:
                 continue
-            if exp_v_norm == act_v_norm or exp_v_norm in act_v_norm or act_v_norm in exp_v_norm:
+            if (
+                exp_v_norm == act_v_norm
+                or exp_v_norm in act_v_norm
+                or act_v_norm in exp_v_norm
+            ):
                 return True
     return False
 
 
 TITLE_ALIASES: dict[str, dict[str, list[str]]] = {
     "cleancode": {
-        "Meaningful Names": ["의미있는이름", "의미 있는 이름", "의미있는 이름", "Meaningful Name"],
+        "Meaningful Names": [
+            "의미있는이름",
+            "의미 있는 이름",
+            "의미있는 이름",
+            "Meaningful Name",
+        ],
         "Functions": ["함수"],
         "Comments": ["주석"],
-        "Objects and Data Structures": ["객체와자료구조", "객체와 자료구조", "객체와 자료 구조"],
+        "Objects and Data Structures": [
+            "객체와자료구조",
+            "객체와 자료구조",
+            "객체와 자료 구조",
+        ],
         "Classes": ["클래스"],
         "Exceptions": ["오류처리", "오류 처리", "예외", "Error Handling"],
         "Boundaries": ["경계"],
     },
     "mcat": {
-        "Cell Structure and Function": ["The cell", "The Cell", "Cell Biology", "Cell structure"],
+        "Cell Structure and Function": [
+            "The cell",
+            "The Cell",
+            "Cell Biology",
+            "Cell structure",
+        ],
         "Human Anatomy and Physiology": [
-            "The nervous system", "The endocrine system", "The respiratory system",
-            "The cardiovascular system", "The immune system", "The digestive system",
-            "The musculoskeletal system", "Homeostasis",
+            "The nervous system",
+            "The endocrine system",
+            "The respiratory system",
+            "The cardiovascular system",
+            "The immune system",
+            "The digestive system",
+            "The musculoskeletal system",
+            "Homeostasis",
         ],
         "Enzymes and Kinetics": ["Enzymes", "Enzyme kinetics", "Bioenergetics"],
     },
@@ -677,12 +712,16 @@ def contains_keyword_flexible(titles: list[str], keyword: str, case_id: str) -> 
     for title in titles:
         title_text = str(title)
         for candidate in candidates:
-            if contains_keyword(title_text, candidate) or flexible_match(candidate, title_text):
+            if contains_keyword(title_text, candidate) or flexible_match(
+                candidate, title_text
+            ):
                 return True
     return False
 
 
-def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, Any]) -> tuple[list[tuple[str, Any, Any, bool]], int, int]:
+def compare_case(
+    case_id: str, fixture_obj: dict[str, Any], actual: dict[str, Any]
+) -> tuple[list[tuple[str, Any, Any, bool]], int, int]:
     checks: list[tuple[str, Any, Any, bool]] = []
     rules = fixture_obj["verification_rules"]
 
@@ -692,19 +731,51 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         for field in expected["fields"]:
             exp = expected[field]
             act = actual_meta.get(field)
-            checks.append((f"metadata.{field}", exp, act, flexible_match(str(exp), str(act))))
+            checks.append(
+                (f"metadata.{field}", exp, act, flexible_match(str(exp), str(act)))
+            )
 
         toc_expected = rules["toc_structure_check"]
         actual_toc = actual.get("table_of_contents", {})
-        checks.append(("table_of_contents.total_chapters", toc_expected["total_chapters"], actual_toc.get("total_chapters"), str(toc_expected["total_chapters"]) == str(actual_toc.get("total_chapters"))))
-        checks.append(("table_of_contents.total_appendices", toc_expected["total_appendices"], actual_toc.get("total_appendices"), str(toc_expected["total_appendices"]) == str(actual_toc.get("total_appendices"))))
+        checks.append(
+            (
+                "table_of_contents.total_chapters",
+                toc_expected["total_chapters"],
+                actual_toc.get("total_chapters"),
+                str(toc_expected["total_chapters"])
+                == str(actual_toc.get("total_chapters")),
+            )
+        )
+        checks.append(
+            (
+                "table_of_contents.total_appendices",
+                toc_expected["total_appendices"],
+                actual_toc.get("total_appendices"),
+                str(toc_expected["total_appendices"])
+                == str(actual_toc.get("total_appendices")),
+            )
+        )
         chapter_titles = actual_toc.get("chapter_titles", []) or []
         for keyword in toc_expected["chapter_titles_must_contain"]:
             ok = contains_keyword_flexible(chapter_titles, keyword, case_id)
-            checks.append((f'chapter_titles contains "{keyword}"', "포함", "포함" if ok else "미포함", ok))
+            checks.append(
+                (
+                    f'chapter_titles contains "{keyword}"',
+                    "포함",
+                    "포함" if ok else "미포함",
+                    ok,
+                )
+            )
         depth_expected = rules["toc_depth_check"]["max_depth_observed"]
         depth_actual = actual_toc.get("max_depth_observed")
-        checks.append(("table_of_contents.max_depth_observed", depth_expected, depth_actual, str(depth_expected) == str(depth_actual)))
+        checks.append(
+            (
+                "table_of_contents.max_depth_observed",
+                depth_expected,
+                depth_actual,
+                str(depth_expected) == str(depth_actual),
+            )
+        )
 
     elif case_id == "mcat":
         expected = rules["metadata_exact_match"]
@@ -712,23 +783,62 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
         for field in expected["fields"]:
             exp = expected[field]
             act = actual_meta.get(field)
-            checks.append((f"metadata.{field}", exp, act, flexible_match(str(exp), str(act))))
+            checks.append(
+                (f"metadata.{field}", exp, act, flexible_match(str(exp), str(act)))
+            )
 
         toc_expected = rules["toc_structure_check"]
         actual_toc = actual.get("table_of_contents", {})
-        checks.append(("table_of_contents.biology_chapters", toc_expected["biology_chapters"], actual_toc.get("biology_chapters"), str(toc_expected["biology_chapters"]) == str(actual_toc.get("biology_chapters"))))
-        checks.append(("table_of_contents.biochemistry_chapters", toc_expected["biochemistry_chapters"], actual_toc.get("biochemistry_chapters"), str(toc_expected["biochemistry_chapters"]) == str(actual_toc.get("biochemistry_chapters"))))
+        checks.append(
+            (
+                "table_of_contents.biology_chapters",
+                toc_expected["biology_chapters"],
+                actual_toc.get("biology_chapters"),
+                str(toc_expected["biology_chapters"])
+                == str(actual_toc.get("biology_chapters")),
+            )
+        )
+        checks.append(
+            (
+                "table_of_contents.biochemistry_chapters",
+                toc_expected["biochemistry_chapters"],
+                actual_toc.get("biochemistry_chapters"),
+                str(toc_expected["biochemistry_chapters"])
+                == str(actual_toc.get("biochemistry_chapters")),
+            )
+        )
         biology_titles = actual_toc.get("biology_chapter_titles", []) or []
         for keyword in ["Cell Structure and Function", "Human Anatomy and Physiology"]:
             ok = contains_keyword_flexible(biology_titles, keyword, case_id)
-            checks.append((f'biology_chapter_titles contains "{keyword}"', "포함", "포함" if ok else "미포함", ok))
+            checks.append(
+                (
+                    f'biology_chapter_titles contains "{keyword}"',
+                    "포함",
+                    "포함" if ok else "미포함",
+                    ok,
+                )
+            )
         biochem_titles = actual_toc.get("biochemistry_chapter_titles", []) or []
         target = "Enzymes and Kinetics"
         ok = contains_keyword_flexible(biochem_titles, target, case_id)
-        checks.append((f'biochemistry_chapter_titles contains "{target}"', "포함", "포함" if ok else "미포함", ok))
+        checks.append(
+            (
+                f'biochemistry_chapter_titles contains "{target}"',
+                "포함",
+                "포함" if ok else "미포함",
+                ok,
+            )
+        )
         depth_expected = rules["toc_depth_check"]["max_depth_observed"]
         depth_actual = actual_toc.get("max_depth_observed")
-        checks.append(("table_of_contents.max_depth_observed", depth_expected, depth_actual, str(depth_expected) == str(depth_actual)))
+        checks.append(
+            (
+                "table_of_contents.max_depth_observed",
+                depth_expected,
+                depth_actual,
+                str(depth_expected) == str(depth_actual),
+            )
+        )
 
     elif case_id == "inflearn":
         expected = rules["metadata_exact_match"]
@@ -750,28 +860,73 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
 
         cur_expected = rules["curriculum_structure_check"]
         actual_cur = actual.get("curriculum", {})
-        checks.append(("curriculum.total_sections", cur_expected["total_sections"], actual_cur.get("total_sections"), str(cur_expected["total_sections"]) == str(actual_cur.get("total_sections"))))
-        checks.append(("curriculum.section_lecture_counts", cur_expected["section_lecture_counts"], actual_cur.get("section_lecture_counts"), str(cur_expected["section_lecture_counts"]) == str(actual_cur.get("section_lecture_counts"))))
+        checks.append(
+            (
+                "curriculum.total_sections",
+                cur_expected["total_sections"],
+                actual_cur.get("total_sections"),
+                str(cur_expected["total_sections"])
+                == str(actual_cur.get("total_sections")),
+            )
+        )
+        checks.append(
+            (
+                "curriculum.section_lecture_counts",
+                cur_expected["section_lecture_counts"],
+                actual_cur.get("section_lecture_counts"),
+                str(cur_expected["section_lecture_counts"])
+                == str(actual_cur.get("section_lecture_counts")),
+            )
+        )
         section_titles = actual_cur.get("section_titles", []) or []
         for keyword in cur_expected["section_titles_must_contain"]:
             ok = any(contains_keyword(str(title), keyword) for title in section_titles)
-            checks.append((f'section_titles contains "{keyword}"', "포함", "포함" if ok else "미포함", ok))
+            checks.append(
+                (
+                    f'section_titles contains "{keyword}"',
+                    "포함",
+                    "포함" if ok else "미포함",
+                    ok,
+                )
+            )
 
         key_lectures = actual_cur.get("key_lectures", {}) or {}
         expected_keys = {
-            "3.3": {"title": "API Gateway & Load Balancer & Service Discovery", "duration": "16:01"},
+            "3.3": {
+                "title": "API Gateway & Load Balancer & Service Discovery",
+                "duration": "16:01",
+            },
             "3.7": {"title": "Message Queue & Event Broker", "duration": "32:12"},
         }
         for key, data in expected_keys.items():
             actual_item = key_lectures.get(key, {}) or {}
-            checks.append((f"key_lectures[{key}].title", data["title"], actual_item.get("title"), str(data["title"]) == str(actual_item.get("title"))))
-            checks.append((f"key_lectures[{key}].duration", data["duration"], actual_item.get("duration"), str(data["duration"]) == str(actual_item.get("duration"))))
+            checks.append(
+                (
+                    f"key_lectures[{key}].title",
+                    data["title"],
+                    actual_item.get("title"),
+                    str(data["title"]) == str(actual_item.get("title")),
+                )
+            )
+            checks.append(
+                (
+                    f"key_lectures[{key}].duration",
+                    data["duration"],
+                    actual_item.get("duration"),
+                    str(data["duration"]) == str(actual_item.get("duration")),
+                )
+            )
 
     elif case_id == "realdeal":
         expected = rules["metadata_exact_match"]
         actual_meta = actual.get("metadata", {})
         REALDEAL_FIELD_ALIASES = {
-            "platform": ["RealDealClass", "리얼딜 클라쓰", "리얼딜클라쓰", "Real Deal Class"],
+            "platform": [
+                "RealDealClass",
+                "리얼딜 클라쓰",
+                "리얼딜클라쓰",
+                "Real Deal Class",
+            ],
         }
         for field in expected["fields"]:
             exp = expected[field]
@@ -787,20 +942,68 @@ def compare_case(case_id: str, fixture_obj: dict[str, Any], actual: dict[str, An
 
         cur_expected = rules["curriculum_structure_check"]
         actual_cur = actual.get("curriculum", {})
-        checks.append(("curriculum.total_chapters", cur_expected["total_chapters"], actual_cur.get("total_chapters"), str(cur_expected["total_chapters"]) == str(actual_cur.get("total_chapters"))))
-        checks.append(("curriculum.has_special_lessons", cur_expected["has_special_lessons"], actual_cur.get("has_special_lessons"), str(cur_expected["has_special_lessons"]) == str(actual_cur.get("has_special_lessons"))))
-        checks.append(("curriculum.special_lesson_count", cur_expected["special_lesson_count"], actual_cur.get("special_lesson_count"), str(cur_expected["special_lesson_count"]) == str(actual_cur.get("special_lesson_count"))))
+        checks.append(
+            (
+                "curriculum.total_chapters",
+                cur_expected["total_chapters"],
+                actual_cur.get("total_chapters"),
+                str(cur_expected["total_chapters"])
+                == str(actual_cur.get("total_chapters")),
+            )
+        )
+        checks.append(
+            (
+                "curriculum.has_special_lessons",
+                cur_expected["has_special_lessons"],
+                actual_cur.get("has_special_lessons"),
+                str(cur_expected["has_special_lessons"])
+                == str(actual_cur.get("has_special_lessons")),
+            )
+        )
+        checks.append(
+            (
+                "curriculum.special_lesson_count",
+                cur_expected["special_lesson_count"],
+                actual_cur.get("special_lesson_count"),
+                str(cur_expected["special_lesson_count"])
+                == str(actual_cur.get("special_lesson_count")),
+            )
+        )
         chapter_titles = actual_cur.get("chapter_titles", []) or []
         for keyword in cur_expected["chapter_titles_must_contain"]:
             ok = contains_keyword_flexible(chapter_titles, keyword, case_id)
-            checks.append((f'chapter_titles contains "{keyword}"', "포함", "포함" if ok else "미포함", ok))
+            checks.append(
+                (
+                    f'chapter_titles contains "{keyword}"',
+                    "포함",
+                    "포함" if ok else "미포함",
+                    ok,
+                )
+            )
 
         key_lectures = actual_cur.get("key_lectures", {}) or {}
-        expected_keys = {"1": {"title": "문법의 개념", "duration": "37:23"}, "27": {"title": "to-V 1", "duration": "42:20"}}
+        expected_keys = {
+            "1": {"title": "문법의 개념", "duration": "37:23"},
+            "27": {"title": "to-V 1", "duration": "42:20"},
+        }
         for key, data in expected_keys.items():
             actual_item = key_lectures.get(key, {}) or {}
-            checks.append((f"key_lectures[{key}].title", data["title"], actual_item.get("title"), str(data["title"]) == str(actual_item.get("title"))))
-            checks.append((f"key_lectures[{key}].duration", data["duration"], actual_item.get("duration"), str(data["duration"]) == str(actual_item.get("duration"))))
+            checks.append(
+                (
+                    f"key_lectures[{key}].title",
+                    data["title"],
+                    actual_item.get("title"),
+                    str(data["title"]) == str(actual_item.get("title")),
+                )
+            )
+            checks.append(
+                (
+                    f"key_lectures[{key}].duration",
+                    data["duration"],
+                    actual_item.get("duration"),
+                    str(data["duration"]) == str(actual_item.get("duration")),
+                )
+            )
 
     passed = sum(1 for _, _, _, ok in checks if ok)
     return checks, passed, len(checks)
@@ -822,7 +1025,9 @@ def write_outputs(
     raw_path = output_dir / f"live_request_raw_{ts}.json"
     report_path = output_dir / f"live_request_comparison_report_{ts}.md"
 
-    raw_path.write_text(json.dumps(raw_data, ensure_ascii=False, indent=2), encoding="utf-8")
+    raw_path.write_text(
+        json.dumps(raw_data, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     now_kst = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
     lines: list[str] = []
@@ -832,11 +1037,21 @@ def write_outputs(
     lines.append(f"- search_mode: `{search_mode}`")
     lines.append(f"- prompt_mode: `{prompt_mode}`")
     lines.append(f"- timeout: `{raw_data.get('meta', {}).get('timeout_sec', 'N/A')}s`")
-    lines.append(f"- retry: `max_retries={raw_data.get('meta', {}).get('max_retries', 'N/A')}, base_delay={raw_data.get('meta', {}).get('retry_delay_sec', 'N/A')}s`")
+    lines.append(
+        f"- retry: `max_retries={raw_data.get('meta', {}).get('max_retries', 'N/A')}, base_delay={raw_data.get('meta', {}).get('retry_delay_sec', 'N/A')}s`"
+    )
     lines.append("- API: OpenRouter 실요청")
-    lines.append("- plugins: " + json.dumps([{"id": "web", "engine": engine, "max_results": max_results}], ensure_ascii=False))
+    lines.append(
+        "- plugins: "
+        + json.dumps(
+            [{"id": "web", "engine": engine, "max_results": max_results}],
+            ensure_ascii=False,
+        )
+    )
     lines.append("- 비교 기준: `docs/verified_source/json/*`의 `verification_rules`")
-    lines.append("- 주의: LLM 응답 비결정성으로 exact 비교는 매 실행 결과가 달라질 수 있음")
+    lines.append(
+        "- 주의: LLM 응답 비결정성으로 exact 비교는 매 실행 결과가 달라질 수 있음"
+    )
     lines.append("")
 
     total_pass = 0
@@ -848,7 +1063,9 @@ def write_outputs(
     lines.append("|---|---|---:|---|")
     for case in cases:
         note = "요청 성공" if case.ok else f"실패 ({case.error})"
-        lines.append(f"| {case.case_id} | {case.mode_used} | {case.web_search_requests} | {note} |")
+        lines.append(
+            f"| {case.case_id} | {case.mode_used} | {case.web_search_requests} | {note} |"
+        )
     lines.append("")
 
     for case in cases:
@@ -902,7 +1119,10 @@ def main() -> int:
 
     api_key = load_api_key(root, args.api_key_env)
     if not api_key:
-        print(f"ERROR: API 키를 찾을 수 없습니다. {args.api_key_env} 또는 .env를 확인하세요.", file=sys.stderr)
+        print(
+            f"ERROR: API 키를 찾을 수 없습니다. {args.api_key_env} 또는 .env를 확인하세요.",
+            file=sys.stderr,
+        )
         return 2
 
     cases = resolve_cases(args.cases)
@@ -915,7 +1135,9 @@ def main() -> int:
             "timeout_sec": args.timeout,
             "max_retries": args.max_retries,
             "retry_delay_sec": args.retry_delay,
-            "plugins": [{"id": "web", "engine": args.engine, "max_results": args.max_results}],
+            "plugins": [
+                {"id": "web", "engine": args.engine, "max_results": args.max_results}
+            ],
             "cases": cases,
             "requested_at": datetime.now(timezone.utc).isoformat(),
         },
@@ -924,7 +1146,9 @@ def main() -> int:
 
     for case_id in cases:
         fixture_name = CASE_TO_FIXTURE[case_id]
-        fixture_obj = json.loads((fixture_dir / fixture_name).read_text(encoding="utf-8"))
+        fixture_obj = json.loads(
+            (fixture_dir / fixture_name).read_text(encoding="utf-8")
+        )
         prompt = make_prompt(case_id, args.prompt_mode)
 
         print(f"[live] requesting {case_id} ...", flush=True)

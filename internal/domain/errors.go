@@ -13,6 +13,9 @@ var (
 	ErrMissingAPIKey    = fmt.Errorf("missing api key: set DASHSCOPE_API_KEY or pass --api-key")
 	ErrInvalidResponse  = fmt.Errorf("invalid response structure after retries")
 	ErrBookNotFound     = fmt.Errorf("book not found")
+	ErrMissingURL       = fmt.Errorf("--url is required for lecture mode")
+	ErrMissingCountry   = fmt.Errorf("--country is required when using --isbn or --lecture")
+	ErrInvalidCountry   = fmt.Errorf("invalid country: allowed values are us, kr, jp, tw")
 )
 
 type RetryableError struct {

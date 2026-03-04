@@ -24,7 +24,7 @@ func TestParseArgsContracts(t *testing.T) {
 	})
 
 	t.Run("isbn wins as preferred identifier", func(t *testing.T) {
-		q, err := ParseArgs([]string{"Clean Code", "--isbn", "978-0132350884"}, &bytes.Buffer{})
+		q, err := ParseArgs([]string{"Clean Code", "--isbn", "978-0132350884", "--country", "us"}, &bytes.Buffer{})
 		if err != nil {
 			t.Fatalf("parse: %v", err)
 		}

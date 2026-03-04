@@ -55,8 +55,11 @@ func TestClientPayloadIncludesSystemUserAndSamplingParams(t *testing.T) {
 	if captured.Input[1].Role != "user" || captured.Input[1].Content != "user prompt" {
 		t.Fatalf("unexpected user message: %+v", captured.Input[1])
 	}
-	if captured.Temperature == nil || math.Abs(*captured.Temperature-0.1) > 0.000001 {
-		t.Fatalf("expected temperature=0.1, got %+v", captured.Temperature)
+	if captured.Temperature == nil || math.Abs(*captured.Temperature-0.0) > 0.000001 {
+		t.Fatalf("expected temperature=0.0, got %+v", captured.Temperature)
+	}
+	if captured.Seed == nil || *captured.Seed != 42 {
+		t.Fatalf("expected seed=42, got %+v", captured.Seed)
 	}
 	if len(captured.Tools) != 2 {
 		t.Fatalf("expected 2 tools, got %d", len(captured.Tools))
