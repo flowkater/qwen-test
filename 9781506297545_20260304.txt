@@ -1,0 +1,293 @@
+Title: MCAT Complete 7-Book Subject Review 2026-2027
+Author: Kaplan Test Prep
+Publisher: Kaplan Test Prep
+ISBN13: 978-1506297545
+
+[Table of Contents]
+- Part 1: MCAT Biology Review 2026-2027
+  - Chapter 1: The Cell
+    - 1.1 Cell Theory and Types
+    - 1.2 Prokaryotic vs Eukaryotic Cells
+    - 1.3 Cell Membrane Structure
+  - Chapter 2: DNA, RNA, and Protein Synthesis
+    - 2.1 DNA Structure and Replication
+    - 2.2 Transcription and mRNA Processing
+    - 2.3 Translation and Protein Folding
+  - Chapter 3: Metabolism
+    - 3.1 Glycolysis and Fermentation
+    - 3.2 Citric Acid Cycle
+    - 3.3 Oxidative Phosphorylation
+  - Chapter 4: Genetics
+    - 4.1 Mendelian Inheritance
+    - 4.2 Non-Mendelian Patterns
+    - 4.3 Population Genetics
+  - Chapter 5: Evolution
+    - 5.1 Natural Selection
+    - 5.2 Speciation and Phylogeny
+    - 5.3 Evidence for Evolution
+  - Chapter 6: Ecology
+    - 6.1 Populations and Communities
+    - 6.2 Ecosystems and Biomes
+    - 6.3 Biodiversity and Conservation
+  - Chapter 7: Animal Systems
+    - 7.1 Nervous System
+    - 7.2 Endocrine System
+    - 7.3 Cardiovascular System
+  - Chapter 8: Plant Systems
+    - 8.1 Plant Structure and Growth
+    - 8.2 Photosynthesis
+    - 8.3 Reproduction and Development
+  - Chapter 9: Scientific Inquiry
+    - 9.1 Experimental Design
+    - 9.2 Data Interpretation
+    - 9.3 Statistical Analysis
+  - Chapter 10: Practice Questions
+    - 10.1 Passage-Based Questions
+    - 10.2 Standalone Questions
+    - 10.3 Answer Explanations
+- Part 2: MCAT Biochemistry Review 2026-2027
+  - Chapter 1: Amino Acids, Peptides, and Proteins
+    - 1.1 Amino Acid Structure and Classification
+    - 1.2 Peptide Bond Formation
+    - 1.3 Protein Structure Levels
+  - Chapter 2: Enzymes
+    - 2.1 Enzyme Kinetics
+    - 2.2 Enzyme Inhibition
+    - 2.3 Regulation of Enzyme Activity
+  - Chapter 3: Carbohydrates
+    - 3.1 Monosaccharides and Disaccharides
+    - 3.2 Polysaccharides
+    - 3.3 Glycogen Metabolism
+  - Chapter 4: Lipids
+    - 4.1 Fatty Acids and Triglycerides
+    - 4.2 Phospholipids and Cholesterol
+    - 4.3 Lipid Metabolism
+  - Chapter 5: Nucleic Acids
+    - 5.1 DNA Structure and Replication
+    - 5.2 RNA Structure and Function
+    - 5.3 Gene Expression
+  - Chapter 6: Metabolic Pathways
+    - 6.1 Glycolysis
+    - 6.2 Citric Acid Cycle
+    - 6.3 Electron Transport Chain
+  - Chapter 7: Acid-Base Chemistry
+    - 7.1 pH and pKa
+    - 7.2 Buffers
+    - 7.3 Titration Curves
+  - Chapter 8: Spectroscopy
+    - 8.1 UV-Vis Spectroscopy
+    - 8.2 IR Spectroscopy
+    - 8.3 NMR Spectroscopy
+  - Chapter 9: Separations and Purifications
+    - 9.1 Chromatography
+    - 9.2 Electrophoresis
+    - 9.3 Centrifugation
+  - Chapter 10: Practice Questions
+    - 10.1 Passage-Based Questions
+    - 10.2 Standalone Questions
+    - 10.3 Answer Explanations
+- Part 3: MCAT General Chemistry Review 2026-2027
+  - Chapter 1: Atomic Structure
+    - 1.1 Subatomic Particles
+    - 1.2 Quantum Numbers
+    - 1.3 Electron Configuration
+  - Chapter 2: The Periodic Table
+    - 2.1 Periodic Trends
+    - 2.2 Group Properties
+    - 2.3 Transition Metals
+  - Chapter 3: Bonding and Interactions
+    - 3.1 Ionic and Covalent Bonds
+    - 3.2 Intermolecular Forces
+    - 3.3 Molecular Geometry
+  - Chapter 4: Stoichiometry
+    - 4.1 Moles and Molar Mass
+    - 4.2 Balancing Equations
+    - 4.3 Limiting Reactants
+  - Chapter 5: Solutions
+    - 5.1 Concentration Units
+    - 5.2 Solubility
+    - 5.3 Colligative Properties
+  - Chapter 6: Thermodynamics
+    - 6.1 Enthalpy and Entropy
+    - 6.2 Gibbs Free Energy
+    - 6.3 Calorimetry
+  - Chapter 7: Kinetics
+    - 7.1 Reaction Rates
+    - 7.2 Rate Laws
+    - 7.3 Activation Energy
+  - Chapter 8: Equilibrium
+    - 8.1 Chemical Equilibrium
+    - 8.2 Le Chatelier's Principle
+    - 8.3 Equilibrium Constants
+  - Chapter 9: Acids and Bases
+    - 9.1 pH and pOH
+    - 9.2 Strong and Weak Acids
+    - 9.3 Titrations
+  - Chapter 10: Practice Questions
+    - 10.1 Passage-Based Questions
+    - 10.2 Standalone Questions
+    - 10.3 Answer Explanations
+- Part 4: MCAT Organic Chemistry Review 2026-2027
+  - Chapter 1: Nomenclature
+    - 1.1 IUPAC Naming Rules
+    - 1.2 Functional Groups
+    - 1.3 Stereochemistry Basics
+  - Chapter 2: Isomers
+    - 2.1 Structural Isomers
+    - 2.2 Stereoisomers
+    - 2.3 Conformational Analysis
+  - Chapter 3: Bonding and Hybridization
+    - 3.1 Orbital Theory
+    - 3.2 sp, sp2, sp3 Hybridization
+    - 3.3 Resonance Structures
+  - Chapter 4: Analyzing Organic Reactions
+    - 4.1 Mechanisms
+    - 4.2 Nucleophiles and Electrophiles
+    - 4.3 Leaving Groups
+  - Chapter 5: Alcohols and Ethers
+    - 5.1 Alcohol Properties
+    - 5.2 Ether Synthesis
+    - 5.3 Reactions of Alcohols
+  - Chapter 6: Aldehydes and Ketones
+    - 6.1 Carbonyl Chemistry
+    - 6.2 Nucleophilic Addition
+    - 6.3 Oxidation and Reduction
+  - Chapter 7: Carboxylic Acids and Derivatives
+    - 7.1 Acid Properties
+    - 7.2 Esterification
+    - 7.3 Amide Formation
+  - Chapter 8: Amines
+    - 8.1 Amine Structure
+    - 8.2 Basicity
+    - 8.3 Reactions of Amines
+  - Chapter 9: Spectroscopy
+    - 9.1 IR Spectroscopy
+    - 9.2 NMR Spectroscopy
+    - 9.3 Mass Spectrometry
+  - Chapter 10: Practice Questions
+    - 10.1 Passage-Based Questions
+    - 10.2 Standalone Questions
+    - 10.3 Answer Explanations
+- Part 5: MCAT Physics and Math Review 2026-2027
+  - Chapter 1: Kinematics
+    - 1.1 Motion in One Dimension
+    - 1.2 Motion in Two Dimensions
+    - 1.3 Graphical Analysis
+  - Chapter 2: Dynamics
+    - 2.1 Newton's Laws
+    - 2.2 Friction and Drag
+    - 2.3 Circular Motion
+  - Chapter 3: Work and Energy
+    - 3.1 Work-Energy Theorem
+    - 3.2 Conservation of Energy
+    - 3.3 Power
+  - Chapter 4: Momentum
+    - 4.1 Impulse and Momentum
+    - 4.2 Conservation of Momentum
+    - 4.3 Collisions
+  - Chapter 5: Fluids
+    - 5.1 Density and Pressure
+    - 5.2 Bernoulli's Equation
+    - 5.3 Viscosity and Flow
+  - Chapter 6: Electrostatics
+    - 6.1 Electric Charge and Force
+    - 6.2 Electric Field
+    - 6.3 Electric Potential
+  - Chapter 7: Circuits
+    - 7.1 Ohm's Law
+    - 7.2 Series and Parallel Circuits
+    - 7.3 RC Circuits
+  - Chapter 8: Magnetism
+    - 8.1 Magnetic Fields
+    - 8.2 Lorentz Force
+    - 8.3 Induction
+  - Chapter 9: Waves and Sound
+    - 9.1 Wave Properties
+    - 9.2 Sound Waves
+    - 9.3 Doppler Effect
+  - Chapter 10: Mathematics
+    - 10.1 Algebra and Functions
+    - 10.2 Trigonometry
+    - 10.3 Logarithms and Exponentials
+- Part 6: MCAT Behavioral Sciences Review 2026-2027
+  - Chapter 1: Biology and Behavior
+    - 1.1 Nervous System Structure
+    - 1.2 Sensory Systems
+    - 1.3 Motor Control
+  - Chapter 2: Sensation and Perception
+    - 2.1 Visual System
+    - 2.2 Auditory System
+    - 2.3 Other Senses
+  - Chapter 3: Learning and Memory
+    - 3.1 Classical Conditioning
+    - 3.2 Operant Conditioning
+    - 3.3 Memory Processes
+  - Chapter 4: Cognition
+    - 4.1 Thinking and Problem Solving
+    - 4.2 Language
+    - 4.3 Intelligence
+  - Chapter 5: Emotion and Motivation
+    - 5.1 Theories of Emotion
+    - 5.2 Stress and Coping
+    - 5.3 Motivation Theories
+  - Chapter 6: Personality
+    - 6.1 Trait Theories
+    - 6.2 Psychoanalytic Theory
+    - 6.3 Humanistic Theory
+  - Chapter 7: Development
+    - 7.1 Physical Development
+    - 7.2 Cognitive Development
+    - 7.3 Social Development
+  - Chapter 8: Psychological Disorders
+    - 8.1 Anxiety Disorders
+    - 8.2 Mood Disorders
+    - 8.3 Schizophrenia
+  - Chapter 9: Research Methods
+    - 9.1 Study Designs
+    - 9.2 Statistics
+    - 9.3 Ethics
+  - Chapter 10: Practice Questions
+    - 10.1 Passage-Based Questions
+    - 10.2 Standalone Questions
+    - 10.3 Answer Explanations
+- Part 7: MCAT Critical Analysis and Reasoning Skills (CARS) Review 2026-2027
+  - Chapter 1: Foundations of Reading
+    - 1.1 Active Reading Strategies
+    - 1.2 Identifying Main Ideas
+    - 1.3 Understanding Tone and Purpose
+  - Chapter 2: Question Types
+    - 2.1 Fact Retrieval
+    - 2.2 Inference and Application
+    - 2.3 Reasoning and Evaluation
+  - Chapter 3: Passage Analysis
+    - 3.1 Humanities Passages
+    - 3.2 Social Science Passages
+    - 3.3 Natural Science Passages
+  - Chapter 4: Logical Reasoning
+    - 4.1 Argument Structure
+    - 4.2 Flaws and Assumptions
+    - 4.3 Strengthening and Weakening
+  - Chapter 5: Vocabulary in Context
+    - 5.1 Word Meaning
+    - 5.2 Connotation and Denotation
+    - 5.3 Rhetorical Devices
+  - Chapter 6: Time Management
+    - 6.1 Pacing Strategies
+    - 6.2 Skipping Difficult Questions
+    - 6.3 Review Techniques
+  - Chapter 7: Practice Passages
+    - 7.1 Humanities Practice
+    - 7.2 Social Science Practice
+    - 7.3 Mixed Practice
+  - Chapter 8: Error Analysis
+    - 8.1 Common Mistakes
+    - 8.2 Pattern Recognition
+    - 8.3 Improvement Plans
+  - Chapter 9: Test-Taking Strategies
+    - 9.1 Elimination Techniques
+    - 9.2 Guessing Strategies
+    - 9.3 Mental Preparation
+  - Chapter 10: Full-Length Practice
+    - 10.1 Simulated Exam Conditions
+    - 10.2 Performance Review
+    - 10.3 Final Recommendations

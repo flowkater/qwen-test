@@ -1,0 +1,565 @@
+Title: Clean Code: A Handbook of Agile Software Craftsmanship
+Author: Robert C. Martin
+Publisher: Prentice Hall
+ISBN13: 978-0-13-235088-4
+
+[Table of Contents]
+- Foreword
+- Introduction
+- On the Cover
+- Chapter 1: Clean Code
+  - There Will Be Code
+  - Bad Code
+  - The Total Cost of Owning a Mess
+  - The Grand Redesign in the Sky
+  - Attitude
+  - The Primal Conundrum
+  - The Art of Clean Code?
+  - What Is Clean Code?
+  - Schools of Thought
+  - We Are Authors
+  - The Boy Scout Rule
+  - Prequel and Principles
+  - Conclusion
+  - Bibliography
+- Chapter 2: Meaningful Names
+  - Introduction
+  - Use Intention-Revealing Names
+  - Avoid Disinformation
+  - Make Meaningful Distinctions
+  - Use Pronounceable Names
+  - Use Searchable Names
+  - Avoid Encodings
+    - Hungarian Notation
+    - Member Prefixes
+    - Interfaces and Implementations
+  - Avoid Mental Mapping
+  - Class Names
+  - Method Names
+  - Don't Be Cute
+  - Pick One Word per Concept
+  - Don't Pun
+  - Use Solution Domain Names
+  - Use Problem Domain Names
+  - Add Meaningful Context
+  - Don't Add Gratuitous Context
+  - Final Words
+- Chapter 3: Functions
+  - Small!
+  - Blocks and Indenting
+  - Do One Thing
+  - Sections within Functions
+  - One Level of Abstraction per Function
+  - Reading Code from Top to Bottom: The Stepdown Rule
+  - Switch Statements
+  - Use Descriptive Names
+  - Function Arguments
+    - Common Monadic Forms
+    - Flag Arguments
+    - Dyadic Functions
+    - Triads
+    - Argument Objects
+    - Argument Lists
+  - Verbs and Keywords
+  - Have No Side Effects
+  - Output Arguments
+  - Command Query Separation
+  - Prefer Exceptions to Returning Error Codes
+  - Extract Try/Catch Blocks
+  - Error Handling Is One Thing
+  - The Error.java Dependency Magnet
+  - Don't Repeat Yourself
+  - Structured Programming
+  - How Do You Write Functions Like This?
+  - Conclusion
+  - SetupTeardownIncluder
+  - Bibliography
+- Chapter 4: Comments
+  - Comments Do Not Make Up for Bad Code
+  - Explain Yourself in Code
+  - Good Comments
+    - Legal Comments
+    - Informative Comments
+    - Explanation of Intent
+    - Clarification
+    - Warning of Consequences
+    - TODO Comments
+    - Amplification
+    - Javadocs in Public APIs
+  - Bad Comments
+    - Mumbling
+    - Redundant Comments
+    - Misleading Comments
+    - Mandated Comments
+    - Journal Comments
+    - Noise Comments
+    - Scary Noise
+  - Don't Use a Comment When You Can Use a Function or a Variable
+  - Position Markers
+  - Closing Brace Comments
+  - Attributions and Bylines
+  - Commented-Out Code
+  - HTML Comments
+  - Nonlocal Information
+  - Too Much Information
+  - Inobvious Connection
+  - Function Headers
+  - Javadocs in Nonpublic Code
+  - Example
+  - Bibliography
+- Chapter 5: Formatting
+  - The Purpose of Formatting
+  - Vertical Formatting
+    - The Newspaper Metaphor
+    - Vertical Openness Between Concepts
+    - Vertical Density
+    - Vertical Distance
+    - Vertical Ordering
+  - Horizontal Formatting
+    - Horizontal Openness and Density
+    - Horizontal Alignment
+    - Indentation
+    - Dummy Scopes
+  - Team Rules
+  - Uncle Bob's Formatting Rules
+- Chapter 6: Objects and Data Structures
+  - Data Abstraction
+  - Data/Object Anti-Symmetry
+  - The Law of Demeter
+    - Train Wrecks
+    - Hybrids
+  - Hiding Structure
+  - Data Transfer Objects
+  - Active Record
+  - Conclusion
+  - Bibliography
+- Chapter 7: Error Handling
+  - Use Exceptions Rather Than Return Codes
+  - Write Your Try-Catch-Finally Statement First
+  - Use Unchecked Exceptions
+  - Provide Context with Exceptions
+  - Define Exception Classes in Terms of a Caller's Needs
+  - Define the Normal Flow
+  - Don't Return Null
+  - Don't Pass Null
+  - Conclusion
+  - Bibliography
+- Chapter 8: Boundaries
+  - Using Third-Party Code
+  - Exploring and Learning Boundaries
+    - Learning log4j
+    - Learning Tests Are Better Than Free
+  - Using Code That Does Not Yet Exist
+  - Clean Boundaries
+  - Bibliography
+- Chapter 9: Unit Tests
+  - The Three Laws of TDD
+    - First Law
+    - Second Law
+    - Third Law
+    - The TDD Cycle
+  - Keeping Tests Clean
+    - Dirty Tests
+    - Refactoring Tests
+    - Test Maintenance
+    - Test Quality Standards
+  - Tests Enable the -ilities
+    - Flexibility
+    - Maintainability
+    - Reusability
+    - Extensibility
+  - Clean Tests
+    - Readability
+    - Naming Conventions
+    - Code Structure
+    - Formatting
+  - Domain-Specific Testing Language
+    - DSL Definition
+    - Benefits of DSL
+    - Creating a DSL
+    - Using DSL in Tests
+  - A Dual Standard
+    - Production Code Standards
+    - Test Code Standards
+    - Simplicity in Tests
+    - Exceptions to the Rule
+  - One Assert per Test
+    - Rationale for One Assert
+    - Multiple Asserts
+    - Fluent Assertions
+    - Assertion Message Clarity
+  - Single Concept per Test
+    - Focus on One Concept
+    - Failure Isolation
+    - Test Clarity
+    - Maintenance Benefits
+  - F.I.R.S.T.
+    - Fast
+    - Independent
+    - Repeatable
+    - Self-validating
+    - Timely
+  - Conclusion
+    - Summary of Principles
+    - Key Takeaways
+    - Future Practices
+  - Bibliography
+    - References
+    - Citations
+    - Further Reading
+- Chapter 10: Classes
+  - Class Organization
+    - Variable Ordering Conventions
+    - Public Static Constants
+    - Private Static Variables
+    - Private Instance Variables
+    - Standard Java Conventions
+  - Encapsulation
+    - Hiding Implementation Details
+    - Data Hiding Principles
+    - Access Modifiers
+    - Interface vs Implementation
+    - Protecting Internal State
+  - Classes Should Be Small!
+    - Size Guidelines
+    - Why Small Classes Are Better
+    - Instance Variable Limits
+    - Method Parameter Limits
+    - God Class Problem
+  - The Single Responsibility Principle
+    - Definition of SRP
+    - One Reason to Change
+    - Identifying Responsibilities
+    - SRP Violations
+    - Applying SRP
+  - Cohesion
+    - High Cohesion Definition
+    - Maximally Cohesive Classes
+    - Low Cohesion Problems
+    - Measuring Cohesion
+    - Cohesion vs Coupling
+  - Maintaining Cohesion Results in Many Small Classes
+    - Function Extraction
+    - Class Proliferation
+    - Benefits of Small Classes
+    - Managing Many Classes
+    - Trade-offs
+  - Organizing for Change
+    - Reducing Risk of Change
+    - Test-Driven Organization
+    - Change Patterns
+    - Future-Proofing Design
+    - Open-Closed Principle
+  - Isolating from Change
+    - Isolation Techniques
+    - Dependency Management
+    - Private Behavior Isolation
+    - Interface Segregation
+    - Dependency Injection
+  - Bibliography
+- Chapter 11: Systems
+  - How Would You Build a City?
+  - Separate Constructing a System from Using It
+  - Separation of Main
+  - Factories
+  - Dependency Injection
+  - Scaling Up
+  - Cross-Cutting Concerns
+    - Java Proxies
+    - Pure Java AOP Frameworks
+    - AspectJ Aspects
+  - Test Drive the System Architecture
+  - Optimize Decision Making
+  - Use Standards Wisely, When They Add Demonstrable Value
+  - Systems Need Domain-Specific Languages
+  - Conclusion
+  - Bibliography
+- Chapter 12: Emergence
+  - Getting Clean via Emergent Design
+    - Introduction to Emergent Design
+    - Kent Beck's Four Rules of Simple Design
+    - Benefits of Following Simple Design Rules
+    - Test-Driven Development Connection
+    - Refactoring as a Design Tool
+    - Design Principles Integration
+    - Practical Examples of Emergent Design
+    - Common Pitfalls in Emergent Design
+  - Simple Design Rule 1: Runs All the Tests
+    - Importance of Running All Tests
+    - Tests Enable Better Design
+    - Test-Driven Development Practices
+    - Writing Effective Unit Tests
+    - Test Coverage and Code Quality
+    - Automated Testing Benefits
+    - Test Maintenance Strategies
+    - Integration with Continuous Integration
+  - Simple Design Rules 2–4: Refactoring
+    - Introduction to Refactoring
+    - Refactoring Techniques and Patterns
+    - Incremental Code Improvement
+    - Safe Refactoring Practices
+    - Refactoring Without Breaking Tests
+    - Code Smell Identification
+    - Refactoring Decision Making
+    - Team Collaboration in Refactoring
+  - No Duplication
+    - DRY Principle Overview
+    - Identifying Code Duplication
+    - Eliminating Logical Duplication
+    - Template Method Pattern
+    - Abstracting Common Behavior
+    - Duplication vs. Abstraction Balance
+    - Maintaining Single Source of Truth
+    - Refactoring Duplicate Code
+  - Expressive
+    - Code Expressiveness Importance
+    - Meaningful Naming Conventions
+    - Self-Documenting Code
+    - Reducing Comment Dependency
+    - Clear Intent Communication
+    - Readable Code Structure
+    - Naming Best Practices
+    - Expressive Variable Names
+  - Minimal Classes and Methods
+    - Principle of Minimalism
+    - Avoiding Over-Engineering
+    - Class Size Guidelines
+    - Method Granularity
+    - Single Responsibility Principle
+    - Balancing Simplicity and Functionality
+    - Avoiding Pointless Dogmatism
+    - Practical Class Design
+  - Conclusion
+    - Summary of Simple Design Rules
+    - Key Takeaways from Emergent Design
+    - Applying Principles in Practice
+    - Continuous Improvement Mindset
+  - Bibliography
+    - References on Simple Design
+    - References on Refactoring
+    - References on Test-Driven Development
+    - Additional Resources
+- Chapter 13: Concurrency
+  - Why Concurrency?
+  - Myths and Misconceptions
+  - Challenges
+  - Concurrency Defense Principles
+    - Single Responsibility Principle
+    - Corollary: Limit the Scope of Data
+    - Corollary: Use Copies of Data
+    - Corollary: Threads Should Be as Independent as Possible
+  - Know Your Library
+    - Thread-Safe Collections
+  - Know Your Execution Models
+    - Producer-Consumer
+    - Readers-Writers
+    - Dining Philosophers
+  - Beware Dependencies Between Synchronized Methods
+  - Keep Synchronized Sections Small
+  - Writing Correct Shut-Down Code Is Hard
+  - Testing Threaded Code
+  - Treat Spurious Failures as Candidate Threading Issues
+  - Get Your Nonthreaded Code Working First
+  - Make Your Threaded Code Pluggable
+  - Make Your Threaded Code Tunable
+  - Run with More Threads Than Processors
+  - Run on Different Platforms
+  - Instrument Your Code to Try and Force Failures
+    - Hand-Coded
+    - Automated
+  - Conclusion
+  - Bibliography
+- Chapter 14: Successive Refinement
+  - Args Implementation
+    - 14.1 Introduction to Args
+    - 14.2 Command-Line Argument Parsing
+    - 14.3 Simple Interface Design
+    - 14.4 Boolean Arguments
+    - 14.5 Integer Arguments
+    - 14.6 Schema Definition
+    - 14.7 Error Handling Basics
+  - How Did I Do This?
+    - 14.8 Reflection on Process
+    - 14.9 Writing Dirty Code First
+    - 14.10 Iterative Improvement
+    - 14.11 Learning Through Refactoring
+    - 14.12 The Power of TDD
+  - Args: The Rough Draft
+    - 14.13 Initial Implementation
+    - 14.14 Basic Argument Parsing
+    - 14.15 Schema Parsing Logic
+    - 14.16 Argument Storage
+    - 14.17 Getter Methods
+    - 14.18 Validation Logic
+    - 14.19 Testing the Draft
+    - 14.20 Identifying Problems
+  - So I Stopped
+    - 14.21 Recognizing the Mess
+    - 14.22 Code Quality Issues
+    - 14.23 Complexity Growth
+    - 14.24 Decision to Refactor
+    - 14.25 Understanding the Root Causes
+  - On Incrementalism
+    - 14.26 Small Steps Philosophy
+    - 14.27 Continuous Refactoring
+    - 14.28 Test-Driven Evolution
+    - 14.29 Avoiding Big Bang Changes
+    - 14.30 Maintaining Working Code
+    - 14.31 The Boy Scout Rule
+  - String Arguments
+    - 14.32 Adding String Support
+    - 14.33 Argument Marshaler Pattern
+    - 14.34 Polymorphic Design
+    - 14.35 Extending for New Types
+    - 14.36 Double Arguments
+    - 14.37 Array Arguments
+    - 14.38 Clean Architecture Emerges
+    - 14.39 Separation of Concerns
+    - 14.40 Final Implementation Review
+  - Conclusion
+    - 14.41 Lessons Learned
+    - 14.42 The Value of Refactoring
+    - 14.43 Successive Refinement Principles
+    - 14.44 Applying to Your Code
+    - 14.45 Summary of Case Study
+- Chapter 15: JUnit Internals
+  - The JUnit Framework
+  - Conclusion
+- Chapter 16: Refactoring SerialDate
+  - First, Make It Work
+    - Introduction to SerialDate
+    - Understanding the Existing Code
+    - Writing Initial Tests
+    - Making Tests Pass
+    - Verifying Functionality
+    - Code Review Process
+    - Test Coverage Analysis
+  - Then Make It Right
+    - Reviewing Working Code
+    - Identifying Smells and Issues
+    - Refactoring for Clarity
+    - Improving Design
+    - Final Cleanup
+    - Naming Improvements
+    - Function Simplification
+    - Structure Optimization
+  - Conclusion
+    - Summary of Lessons Learned
+    - Key Takeaways
+  - Bibliography
+- Chapter 17: Smells and Heuristics
+  - Comments
+    - C1: Inappropriate Information
+    - C2: Obsolete Comment
+    - C3: Redundant Comment
+    - C4: Poorly Written Comment
+    - C5: Commented-Out Code
+  - Environment
+    - E1: Build Requires More Than One Step
+    - E2: Tests Require More Than One Step
+  - Functions
+    - F1: Too Many Arguments
+    - F2: Output Arguments
+    - F3: Flag Arguments
+    - F4: Dead Function
+  - General
+    - G1: Multiple Languages in One Source File
+    - G2: Obvious Behavior Is Unimplemented
+    - G3: Incorrect Behavior at the Boundaries
+    - G4: Overridden Safeties
+    - G5: Duplication
+    - G6: Code at Wrong Level of Abstraction
+    - G7: Base Classes Depending on Their Derivatives
+    - G8: Too Much Information
+    - G9: Dead Code
+    - G10: Vertical Separation
+    - G11: Inconsistency
+    - G12: Clutter
+    - G13: Artificial Coupling
+    - G14: Feature Envy
+    - G15: Selector Arguments
+    - G16: Obscured Intent
+    - G17: Misplaced Responsibility
+    - G18: Inappropriate Static
+    - G19: Use Explanatory Variables
+    - G20: Function Names Should Say What They Do
+    - G21: Understand the Algorithm
+    - G22: Make Logical Dependencies Physical
+    - G23: Prefer Polymorphism to If/Else or Switch/Case
+    - G24: Follow Standard Conventions
+    - G25: Replace Magic Numbers with Named Constants
+    - G26: Be Precise
+    - G27: Structure over Convention
+    - G28: Encapsulate Conditionals
+    - G29: Avoid Negative Conditionals
+    - G30: Functions Should Do One Thing
+    - G31: Hidden Temporal Couplings
+    - G32: Don't Be Arbitrary
+    - G33: Encapsulate Boundary Conditions
+    - G34: Functions Should Descend Only One Level of Abstraction
+    - G35: Keep Configurable Data at High Levels
+    - G36: Avoid Transitive Navigation
+  - Java
+    - J1: Avoid Long Import Lists by Using Wildcards
+    - J2: Don't Inherit Constants
+    - J3: Constants versus Enums
+  - Names
+    - N1: Choose Descriptive Names
+    - N2: Choose Names at the Appropriate Level of Abstraction
+    - N3: Use Standard Nomenclature Where Possible
+    - N4: Unambiguous Names
+    - N5: Use Long Names for Long Scopes
+    - N6: Avoid Encodings
+    - N7: Names Should Describe Side-Effects
+  - Tests
+    - T1: Insufficient Tests
+    - T2: Use a Coverage Tool!
+    - T3: Don't Skip Trivial Tests
+    - T4: An Ignored Test Is a Question about an Ambiguity
+    - T5: Test Boundary Conditions
+    - T6: Exhaustively Test Near Bugs
+    - T7: Patterns of Failure Are Revealing
+    - T8: Test Coverage Patterns Can Be Revealing
+    - T9: Tests Should Be Fast
+  - Conclusion
+  - Bibliography
+- Appendix A: Concurrency II
+  - Client/Server Example
+  - The Server
+  - Adding Threading
+  - Server Observations
+  - Conclusion
+  - Possible Paths of Execution
+  - Number of Paths
+  - Digging Deeper
+  - Conclusion
+  - Knowing Your Library
+  - Executor Framework
+  - Nonblocking Solutions
+  - Nonthread-Safe Classes
+  - Dependencies Between Methods Can Break Concurrent Code
+  - Tolerate the Failure
+  - Client-Based Locking
+  - Server-Based Locking
+  - Increasing Throughput
+  - Single-Thread Calculation of Throughput
+  - Multithread Calculation of Throughput
+  - Deadlock
+  - Mutual Exclusion
+  - Lock & Wait
+  - No Preemption
+  - Circular Wait
+  - Breaking Mutual Exclusion
+  - Breaking Lock & Wait
+  - Breaking Preemption
+  - Breaking Circular Wait
+  - Testing Multithreaded Code
+  - Tool Support for Testing Thread-Based Code
+  - Conclusion
+  - Tutorial: Full Code Examples
+    - Client/Server Nonthreaded
+    - Client/Server Using Threads
+- Appendix B: org.jfree.date.SerialDate
+- Appendix C: Cross References of Heuristics
+- Epilogue
+- Index

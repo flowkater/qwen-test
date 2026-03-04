@@ -1,0 +1,15 @@
+Title: First Steps in System Design: Designing Backend Architecture That Stands Out in Interviews (시스템 디자인 첫걸음: 면접에서 돋보이는 백엔드 아키텍처 설계하기)
+Author: Growth Lantern
+Publisher: Inflearn
+
+[Table of Contents]
+- Part 1: Introduction to System Design
+  - 1.1 What is System Design?
+  - 1.2 Core Concepts
+- Part 2: System Design Fundamentals
+  - 2.1 Load Balancing
+  - 2.2 Caching Strategies
+  - 2.3 Database Design
+- Part 3: Interview Preparation
+  - 3.1 Common Interview Questions
+  - 3.2 Problem-Solving Framework
