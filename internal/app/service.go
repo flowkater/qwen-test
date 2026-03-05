@@ -231,7 +231,7 @@ func (s *Service) processBatchSequential(ctx context.Context, q domain.BookQuery
 func (s *Service) processBatchParallel(ctx context.Context, q domain.BookQuery, lines []string, workers int) ([]domain.BatchItemResult, error) {
 	// Auto-set rate limiting if not explicitly configured.
 	if s.RateInterval <= 0 {
-		s.RateInterval = 500 * time.Millisecond
+		s.RateInterval = 200 * time.Millisecond
 	}
 	results := make([]domain.BatchItemResult, len(lines))
 	usedOutputs := map[string]struct{}{}
