@@ -188,6 +188,163 @@ make run TITLE='클린 코드' L=ko FORMAT=text FULL=1
 make run-batch BATCH='isbns.txt' WORKERS=5 COUNTRY=us NOCACHE=1
 ```
 
+## 에이전트/프로그래매틱 사용 가이드
+
+이 섹션은 AI 에이전트나 스크립트에서 bookinfo를 프로그래매틱하게 호출할 때 필요한 정보입니다.
+
+### 빠른 시작 체크리스트
+
+```bash
+# 1. 환경변수 확인
+test -n "$DASHSCOPE_API_KEY" && echo "OK" || echo "DASHSCOPE_API_KEY 미설정"
+
+# 2. 빌드
+make build   # → bin/bookinfo 생성
+
+# 3. 단건 실행 (JSON → stdout, 요약 → stderr)
+bin/bookinfo "Clean Code" --format json 2>/dev/null
+
+# 4. 종료 코드 확인
+echo $?   # 0=성공, 1=실패
+```
+
+### Exit Codes
+
+| 코드 | 의미 |
+|------|------|
+| `0` | 성공 (단건: 정상 수집, 배치: 전체 성공, `--help`) |
+| `1` | 실패 (플래그 오류, API 키 없음, API 에러, 배치 중 1건 이상 실패) |
+
+### stdout vs stderr 분리
+
+| 스트림 | 내용 |
+|--------|------|
+| **stdout** | JSON/Text 결과 데이터 (`--output` 미지정 시), 배치 진행 로그 |
+| **stderr** | 에러 메시지 (`error: ...`), 도움말 텍스트 |
+
+에이전트가 JSON만 파싱하려면:
+
+```bash
+# JSON만 캡처 (요약/에러는 stderr로 분리됨)
+RESULT=$(bin/bookinfo "Clean Code" 2>/dev/null)
+echo "$RESULT" | jq '.book.title.original'
+
+# 파일로 저장 후 파싱 (권장)
+bin/bookinfo "Clean Code" --output result.json 2>/dev/null
+jq '.book.isbn13' result.json
+```
+
+### 단건 실행 — 에이전트 패턴
+
+```bash
+# 제목으로 풀모드 수집 → 파일 저장
+bin/bookinfo "Clean Code" --full --lang en --output clean_code.json 2>/dev/null
+if [ $? -eq 0 ]; then
+  # 성공: JSON 파싱
+  jq '.book.title.original' clean_code.json
+  jq '.table_of_contents | length' clean_code.json
+  jq '.review.rating' clean_code.json
+else
+  echo "수집 실패" >&2
+fi
+
+# ISBN으로 수집 (--country 필수)
+bin/bookinfo --isbn 978-0132350884 --country us --full --output result.json 2>/dev/null
+```
+
+### 배치 실행 — 에이전트 패턴
+
+```bash
+# 1. 배치 파일 동적 생성
+cat > /tmp/books.txt << 'EOF'
+Clean Code
+978-0132350884
+Designing Data-Intensive Applications
+EOF
+
+# 2. 병렬 실행 (출력 디렉토리 지정)
+mkdir -p /tmp/results
+bin/bookinfo --batch /tmp/books.txt --workers 3 --full \
+  --country us --output /tmp/results/ 2>/dev/null
+
+# 3. 결과 확인 (exit code 1 = 일부 실패)
+if [ $? -eq 0 ]; then
+  echo "전체 성공"
+else
+  echo "일부 실패 — 개별 파일 확인 필요"
+fi
+
+# 4. 개별 JSON 파일 파싱
+for f in /tmp/results/*.json; do
+  echo "$(jq -r '.book.title.original' "$f"): $(jq '.review.rating' "$f")"
+done
+```
+
+### 배치 stdout 출력 형식
+
+배치 실행 시 stdout에 진행 로그가 출력됩니다:
+
+```
+[1/3] "Clean Code" 처리 중...
+  ✅ success: /tmp/results/clean_code_20260305.json
+[2/3] "978-0132350884" 처리 중...
+  ✅ success: /tmp/results/978-0132350884_20260305.json
+[3/3] "Designing Data-Intensive Applications" 처리 중...
+  ❌ failed: retryable error (code=429): rate limit exceeded
+Batch summary: success=2 failed=1
+```
+
+마지막 줄 `Batch summary: success=N failed=M`으로 결과를 파싱할 수 있습니다.
+
+### JSON 출력 스키마 요약
+
+| 필드 | 타입 | basic 모드 | full 모드 | 설명 |
+|------|------|-----------|----------|------|
+| `book` | object | O | O | 메타데이터 (title, author, isbn13, pages 등) |
+| `book.title` | `{original, korean}` | O | O | 원제 + 한국어 제목 |
+| `table_of_contents` | array | `[]` | O | 목차 (depth, children 트리 구조) |
+| `review` | object | 빈값 | O | rating(0-5), pros/cons, recommended_level |
+| `related_courses` | array | `[]` | O | 관련 강의 (title, platform, url 등) |
+| `similar_books` | array | `[]` | O | 유사 도서 (title, author, difficulty_comparison) |
+| `data_availability` | object | O | O | 각 섹션 데이터 존재 여부 (boolean) |
+| `metadata` | object | O | O | collected_at, model, source, mode, query |
+
+`data_availability`로 어떤 섹션이 실제로 채워졌는지 확인하세요:
+
+```bash
+jq '.data_availability' result.json
+# {"table_of_contents": true, "review": true, "related_courses": true, "similar_books": true}
+```
+
+### 에러 메시지 매핑
+
+| stderr 메시지 | 원인 | 해결 |
+|--------------|------|------|
+| `API 키가 없습니다` | `DASHSCOPE_API_KEY` 미설정 | 환경변수 또는 `--api-key` 설정 |
+| `제목 또는 --isbn 중 하나는 필수입니다` | 입력 누락 | title 위치 인자 또는 `--isbn` 추가 |
+| `--country is required` | ISBN/lecture 모드에서 country 누락 | `--country us\|kr\|jp\|tw` 추가 |
+| `--workers must be a positive integer` | workers 값 오류 | 1 이상의 정수 사용 |
+| `허용값: ko, en, ja, zh-tw` | 잘못된 lang | 지원 언어 사용 |
+| `허용값: json, text` | 잘못된 format | `json` 또는 `text` 사용 |
+| `retryable error (code=429)` | API rate limit | workers 줄이거나 재시도 |
+| `retryable error (code=408)` | API 타임아웃 | `BOOKINFO_HTTP_TIMEOUT_SEC` 증가 |
+| `책을 찾지 못했습니다` | 도서 미발견 | 제목/ISBN 확인, `--author` 추가 |
+
+### 캐시 활용 팁
+
+- 동일 쿼리 반복 호출 시 캐시가 자동으로 사용됩니다 (즉시 반환)
+- 에이전트가 최신 데이터를 원하면 `--no-cache` 사용
+- 캐시 키: `{title|isbn}_{model}_{mode}` 조합
+- 캐시 위치: `~/.cache/bookinfo/`
+- 캐시를 초기화하려면: `rm -rf ~/.cache/bookinfo/`
+
+### Rate Limiting 주의사항
+
+- 병렬 실행 시 글로벌 레이트 리미터가 API 호출 간 최소 **200ms** 간격을 자동 유지
+- DashScope qwen3.5-flash 국제 리전: 15,000 RPM / 5,000,000 TPM
+- `--workers 3~5`가 안정적인 병렬 수준 (풀모드에서 내부적으로 여러 API 호출 발생)
+- 429 에러 발생 시 자동 재시도 (exponential backoff, 최대 3회)
+
 ## 출력 형식
 
 ### JSON (기본)
