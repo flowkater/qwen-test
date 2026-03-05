@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 
 	"github.com/flowkater/qwen/bookinfo/internal/domain"
@@ -84,6 +85,16 @@ func ParseArgs(args []string, stderr io.Writer) (domain.BookQuery, error) {
 				return domain.BookQuery{}, fmt.Errorf("missing value for --url")
 			}
 			query.URL = strings.TrimSpace(args[i])
+		case "--workers":
+			i++
+			if i >= len(args) {
+				return domain.BookQuery{}, fmt.Errorf("missing value for --workers")
+			}
+			w, err := strconv.Atoi(strings.TrimSpace(args[i]))
+			if err != nil || w < 1 {
+				return domain.BookQuery{}, fmt.Errorf("--workers must be a positive integer")
+			}
+			query.Workers = w
 		case "--no-cache":
 			query.NoCache = true
 		case "--help", "-h":
@@ -124,7 +135,8 @@ Flags:
   --api-key                 override DASHSCOPE_API_KEY
   --model, -m               model (default qwen/qwen3.5-flash-02-23)
   --output, -o              output path
-  --batch, -b               batch text file (one title per line)
+  --batch, -b               batch text file (one title/ISBN per line)
+  --workers                 parallel workers for batch (default 1 = sequential)
   --no-cache                skip cache read but still write refreshed cache
   --country                 country code us|kr|jp|tw (required for --isbn and --lecture)
   --lecture                 lecture/course mode (requires --url and --country)

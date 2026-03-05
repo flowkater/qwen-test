@@ -29,17 +29,37 @@ type Service struct {
 	Writer            Writer
 	EnrichConcurrency int
 	MinTOCChapters    int
+	RateInterval      time.Duration // minimum interval between API calls (0 = no throttling)
 
 	Backoff domain.BackoffConfig
 	Clock   Clock
 	Sleep   Sleeper
 	Jitter  func(max time.Duration) time.Duration
+
+	rateMu      sync.Mutex
+	lastAPICall time.Time
 }
 
 type ProcessResult struct {
 	Info       domain.BookInfo
 	OutputPath string
 	FromCache  bool
+}
+
+// throttle blocks until enough time has passed since the last API call.
+// Safe for concurrent use — goroutines serialize through the mutex.
+func (s *Service) throttle() {
+	if s.RateInterval <= 0 {
+		return
+	}
+	s.rateMu.Lock()
+	defer s.rateMu.Unlock()
+	now := s.Clock()
+	elapsed := now.Sub(s.lastAPICall)
+	if elapsed < s.RateInterval {
+		s.Sleep(s.RateInterval - elapsed)
+	}
+	s.lastAPICall = s.Clock()
 }
 
 func (s *Service) defaults() {
@@ -144,33 +164,39 @@ func (s *Service) ProcessBatch(ctx context.Context, q domain.BookQuery) ([]domai
 	defer file.Close()
 
 	sc := bufio.NewScanner(file)
-	var titles []string
+	var lines []string
 	for sc.Scan() {
 		line := strings.TrimSpace(sc.Text())
 		if line != "" {
-			titles = append(titles, line)
+			lines = append(lines, line)
 		}
 	}
 	if err := sc.Err(); err != nil {
 		return nil, err
 	}
 
+	workers := q.Workers
+	if workers <= 1 {
+		return s.processBatchSequential(ctx, q, lines)
+	}
+	return s.processBatchParallel(ctx, q, lines, workers)
+}
+
+// processBatchSequential preserves the original adaptive-backoff logic for workers=1.
+func (s *Service) processBatchSequential(ctx context.Context, q domain.BookQuery, lines []string) ([]domain.BatchItemResult, error) {
 	delay := 3 * time.Second
 	successStreak := 0
-	results := make([]domain.BatchItemResult, 0, len(titles))
+	results := make([]domain.BatchItemResult, 0, len(lines))
 	usedOutputs := map[string]struct{}{}
 	date := s.Clock().Local().Format("20060102")
-	for idx, title := range titles {
-		itemQuery := q
-		itemQuery.Title = title
-		itemQuery.ISBN13 = ""
-		itemQuery.BatchPath = ""
+	for idx, line := range lines {
+		itemQuery := buildItemQuery(q, line)
 		itemQuery.Output = s.batchOutputPath(itemQuery, q.Output, date, usedOutputs)
 
 		res, err := s.ProcessOne(ctx, itemQuery)
 		if err != nil {
 			results = append(results, domain.BatchItemResult{
-				Query:   title,
+				Query:   line,
 				Success: false,
 				Error:   err.Error(),
 			})
@@ -184,7 +210,7 @@ func (s *Service) ProcessBatch(ctx context.Context, q domain.BookQuery) ([]domai
 			}
 		} else {
 			results = append(results, domain.BatchItemResult{
-				Query:      title,
+				Query:      line,
 				Success:    true,
 				OutputPath: res.OutputPath,
 			})
@@ -193,11 +219,88 @@ func (s *Service) ProcessBatch(ctx context.Context, q domain.BookQuery) ([]domai
 				delay = 3 * time.Second
 			}
 		}
-		if idx < len(titles)-1 {
+		if idx < len(lines)-1 {
 			s.Sleep(delay)
 		}
 	}
 	return results, nil
+}
+
+// processBatchParallel runs items concurrently with a semaphore of size workers.
+// A global rate limiter throttles API calls to avoid rate-limit bursts.
+func (s *Service) processBatchParallel(ctx context.Context, q domain.BookQuery, lines []string, workers int) ([]domain.BatchItemResult, error) {
+	// Auto-set rate limiting if not explicitly configured.
+	if s.RateInterval <= 0 {
+		s.RateInterval = 500 * time.Millisecond
+	}
+	results := make([]domain.BatchItemResult, len(lines))
+	usedOutputs := map[string]struct{}{}
+	date := s.Clock().Local().Format("20060102")
+
+	sem := make(chan struct{}, workers)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+
+	for i, line := range lines {
+		wg.Add(1)
+		go func(idx int, line string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			itemQuery := buildItemQuery(q, line)
+			mu.Lock()
+			itemQuery.Output = s.batchOutputPath(itemQuery, q.Output, date, usedOutputs)
+			mu.Unlock()
+
+			res, err := s.ProcessOne(ctx, itemQuery)
+			if err != nil {
+				results[idx] = domain.BatchItemResult{
+					Query:   line,
+					Success: false,
+					Error:   err.Error(),
+				}
+			} else {
+				results[idx] = domain.BatchItemResult{
+					Query:      line,
+					Success:    true,
+					OutputPath: res.OutputPath,
+				}
+			}
+		}(i, line)
+	}
+	wg.Wait()
+	return results, nil
+}
+
+// classifyBatchLine determines whether a line is an ISBN-13 or a title.
+// ISBN-13 starts with 978/979 and is 13 digits (ignoring hyphens).
+func classifyBatchLine(line string) (title, isbn string) {
+	cleaned := strings.ReplaceAll(line, "-", "")
+	if len(cleaned) == 13 && (strings.HasPrefix(cleaned, "978") || strings.HasPrefix(cleaned, "979")) {
+		allDigits := true
+		for _, r := range cleaned {
+			if r < '0' || r > '9' {
+				allDigits = false
+				break
+			}
+		}
+		if allDigits {
+			return "", line
+		}
+	}
+	return line, ""
+}
+
+// buildItemQuery creates a per-item BookQuery from the batch query and a line,
+// auto-classifying the line as title or ISBN-13.
+func buildItemQuery(q domain.BookQuery, line string) domain.BookQuery {
+	itemQuery := q
+	itemQuery.BatchPath = ""
+	title, isbn := classifyBatchLine(line)
+	itemQuery.Title = title
+	itemQuery.ISBN13 = isbn
+	return itemQuery
 }
 
 func (s *Service) batchOutputPath(itemQuery domain.BookQuery, outputRoot string, localDate string, used map[string]struct{}) string {
@@ -251,6 +354,7 @@ func collectWithRetry[T any](svc *Service, ctx context.Context, collect func() (
 			return zero, ctx.Err()
 		default:
 		}
+		svc.throttle()
 		raw, err := collect()
 		if err != nil {
 			lastErr = err

@@ -71,9 +71,45 @@ func TestParseArgsContracts(t *testing.T) {
 	})
 }
 
+func TestParseArgsWorkers(t *testing.T) {
+	t.Run("valid workers", func(t *testing.T) {
+		q, err := ParseArgs([]string{"--batch", "books.txt", "--workers", "5"}, &bytes.Buffer{})
+		if err != nil {
+			t.Fatalf("parse: %v", err)
+		}
+		if q.Workers != 5 {
+			t.Fatalf("workers = %d, want 5", q.Workers)
+		}
+	})
+	t.Run("default workers is 0", func(t *testing.T) {
+		q, err := ParseArgs([]string{"--batch", "books.txt"}, &bytes.Buffer{})
+		if err != nil {
+			t.Fatalf("parse: %v", err)
+		}
+		if q.Workers != 0 {
+			t.Fatalf("workers = %d, want 0 (unset)", q.Workers)
+		}
+	})
+	t.Run("invalid workers rejected", func(t *testing.T) {
+		if _, err := ParseArgs([]string{"--batch", "books.txt", "--workers", "abc"}, &bytes.Buffer{}); err == nil {
+			t.Fatal("expected error for non-integer workers")
+		}
+	})
+	t.Run("zero workers rejected", func(t *testing.T) {
+		if _, err := ParseArgs([]string{"--batch", "books.txt", "--workers", "0"}, &bytes.Buffer{}); err == nil {
+			t.Fatal("expected error for zero workers")
+		}
+	})
+	t.Run("negative workers rejected", func(t *testing.T) {
+		if _, err := ParseArgs([]string{"--batch", "books.txt", "--workers", "-1"}, &bytes.Buffer{}); err == nil {
+			t.Fatal("expected error for negative workers")
+		}
+	})
+}
+
 func TestHelpIncludesRequiredFlags(t *testing.T) {
 	help := HelpText()
-	for _, f := range []string{"--isbn", "--full", "--lang", "--no-cache", "--format"} {
+	for _, f := range []string{"--isbn", "--full", "--lang", "--no-cache", "--format", "--workers"} {
 		if !bytes.Contains([]byte(help), []byte(f)) {
 			t.Fatalf("help missing flag %s", f)
 		}

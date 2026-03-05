@@ -47,6 +47,9 @@ endif
 ifdef URL
 _FLAGS += --url "$(URL)"
 endif
+ifdef WORKERS
+_FLAGS += --workers $(WORKERS)
+endif
 
 # .env 로딩 + 실행을 한 쉘에서 처리하는 매크로
 # $(1) = 바이너리 인자 전체
@@ -93,7 +96,8 @@ help:
 	@echo "  make run-lecture-kr URL='https://www.inflearn.com/course/...'  강의 + 한국어"
 	@echo ""
 	@echo "배치:"
-	@echo "  make run-batch BATCH='titles.txt'                배치 실행"
+	@echo "  make run-batch BATCH='titles.txt'                배치 실행 (직렬)"
+	@echo "  make run-batch BATCH='titles.txt' WORKERS=5      배치 실행 (5개 병렬)"
 	@echo ""
 	@echo "비교 스크립트:"
 	@echo "  make compare                                     OpenRouter 라이브 비교"
@@ -109,6 +113,7 @@ help:
 	@echo "  FULL=1                 풀모드"
 	@echo "  COUNTRY=us|kr|jp|tw    국가 (isbn/lecture 계열 필수)"
 	@echo "  URL='https://...'      강의 URL (lecture 계열 필수)"
+	@echo "  WORKERS=N              배치 병렬 워커 수 (기본 1 = 직렬)"
 	@echo "  TIMEOUT_SEC=180        타임아웃 (기본 120)"
 	@echo "  ARGS='--extra-flag'    추가 플래그"
 	@echo ""

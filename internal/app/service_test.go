@@ -991,3 +991,212 @@ func TestTocQualityOK(t *testing.T) {
 		t.Fatal("non-empty TOC should be OK when MinTOCChapters=0")
 	}
 }
+
+func TestClassifyBatchLine(t *testing.T) {
+	tests := []struct {
+		line      string
+		wantTitle string
+		wantISBN  string
+	}{
+		{"Clean Code", "Clean Code", ""},
+		{"978-0132350884", "", "978-0132350884"},
+		{"9780132350884", "", "9780132350884"},
+		{"979-1234567890", "", "979-1234567890"},
+		{"9791234567890", "", "9791234567890"},
+		{"978-short", "978-short", ""},       // too short after removing hyphens
+		{"978-01323508841", "978-01323508841", ""}, // 14 digits = not ISBN
+		{"Designing Data-Intensive Applications", "Designing Data-Intensive Applications", ""},
+		{"978abcdefghij", "978abcdefghij", ""}, // non-digit chars
+	}
+	for _, tt := range tests {
+		title, isbn := classifyBatchLine(tt.line)
+		if title != tt.wantTitle || isbn != tt.wantISBN {
+			t.Errorf("classifyBatchLine(%q) = (%q, %q), want (%q, %q)",
+				tt.line, title, isbn, tt.wantTitle, tt.wantISBN)
+		}
+	}
+}
+
+func TestProcessBatchISBNLines(t *testing.T) {
+	var mu sync.Mutex
+	var queriedISBNs []string
+	svc := &Service{
+		Collector: fakeCollector{
+			unifiedFn: func(q domain.BookQuery) ([]byte, error) {
+				mu.Lock()
+				if q.ISBN13 != "" {
+					queriedISBNs = append(queriedISBNs, q.ISBN13)
+				}
+				mu.Unlock()
+				meta := `{"title":{"original":"Test","korean":""},"author":"A","publisher":"P","isbn13":"978-0132350884"}`
+				toc := `[{"title":{"original":"Ch1","korean":""},"depth":1,"children":[]}]`
+				return []byte(`{"metadata":` + meta + `,"toc":` + toc + `}`), nil
+			},
+		},
+		Validator:      fakeValidator{},
+		Cache:          &memCache{},
+		Writer:         &fakeWriter{},
+		Sleep:          func(time.Duration) {},
+		MinTOCChapters: 1,
+	}
+
+	file := filepath.Join(t.TempDir(), "mixed.txt")
+	content := "Clean Code\n978-0132350884\nDesigning Data-Intensive Applications\n979-1234567890\n"
+	if err := os.WriteFile(file, []byte(content), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	results, err := svc.ProcessBatch(context.Background(), domain.BookQuery{BatchPath: file, Country: "us"})
+	if err != nil {
+		t.Fatalf("batch: %v", err)
+	}
+	if len(results) != 4 {
+		t.Fatalf("expected 4 results, got %d", len(results))
+	}
+	mu.Lock()
+	defer mu.Unlock()
+	if len(queriedISBNs) != 2 {
+		t.Fatalf("expected 2 ISBN queries, got %d: %v", len(queriedISBNs), queriedISBNs)
+	}
+	if queriedISBNs[0] != "978-0132350884" || queriedISBNs[1] != "979-1234567890" {
+		t.Fatalf("unexpected ISBN queries: %v", queriedISBNs)
+	}
+}
+
+func TestProcessBatchParallel(t *testing.T) {
+	var active int64
+	var maxActive int64
+	svc := &Service{
+		Collector: fakeCollector{
+			unifiedFn: func(q domain.BookQuery) ([]byte, error) {
+				cur := atomic.AddInt64(&active, 1)
+				for {
+					old := atomic.LoadInt64(&maxActive)
+					if cur <= old || atomic.CompareAndSwapInt64(&maxActive, old, cur) {
+						break
+					}
+				}
+				time.Sleep(50 * time.Millisecond) // simulate work
+				atomic.AddInt64(&active, -1)
+				meta := fmt.Sprintf(`{"title":{"original":"%s","korean":""},"author":"A","publisher":"P","isbn13":""}`, q.Title)
+				toc := `[{"title":{"original":"Ch1","korean":""},"depth":1,"children":[]}]`
+				return []byte(`{"metadata":` + meta + `,"toc":` + toc + `}`), nil
+			},
+		},
+		Validator: fakeValidator{},
+		Cache:     &memCache{},
+		Writer:    &fakeWriter{},
+		Sleep:     func(time.Duration) {},
+	}
+
+	file := filepath.Join(t.TempDir(), "batch.txt")
+	if err := os.WriteFile(file, []byte("A\nB\nC\nD\nE\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	results, err := svc.ProcessBatch(context.Background(), domain.BookQuery{
+		BatchPath: file,
+		Workers:   3,
+	})
+	if err != nil {
+		t.Fatalf("batch: %v", err)
+	}
+	if len(results) != 5 {
+		t.Fatalf("expected 5 results, got %d", len(results))
+	}
+	// With workers=3 and 50ms sleep, we should see >1 concurrent goroutine.
+	if atomic.LoadInt64(&maxActive) < 2 {
+		t.Fatalf("expected parallel execution (maxActive >= 2), got %d", maxActive)
+	}
+	// Verify order preservation.
+	expected := []string{"A", "B", "C", "D", "E"}
+	for i, r := range results {
+		if r.Query != expected[i] {
+			t.Fatalf("result[%d].Query = %q, want %q", i, r.Query, expected[i])
+		}
+		if !r.Success {
+			t.Fatalf("result[%d] failed: %s", i, r.Error)
+		}
+	}
+}
+
+func TestProcessBatchPartialFailure(t *testing.T) {
+	callCount := 0
+	svc := &Service{
+		Collector: fakeCollector{
+			unifiedFn: func(q domain.BookQuery) ([]byte, error) {
+				callCount++
+				if q.Title == "FAIL" {
+					return nil, errors.New("simulated error")
+				}
+				meta := fmt.Sprintf(`{"title":{"original":"%s","korean":""},"author":"A","publisher":"P","isbn13":""}`, q.Title)
+				toc := `[{"title":{"original":"Ch1","korean":""},"depth":1,"children":[]}]`
+				return []byte(`{"metadata":` + meta + `,"toc":` + toc + `}`), nil
+			},
+		},
+		Validator: fakeValidator{},
+		Cache:     &memCache{},
+		Writer:    &fakeWriter{},
+		Sleep:     func(time.Duration) {},
+	}
+
+	file := filepath.Join(t.TempDir(), "batch.txt")
+	if err := os.WriteFile(file, []byte("OK1\nFAIL\nOK2\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	results, err := svc.ProcessBatch(context.Background(), domain.BookQuery{
+		BatchPath: file,
+		Workers:   3,
+	})
+	if err != nil {
+		t.Fatalf("batch: %v", err)
+	}
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+	if !results[0].Success {
+		t.Fatal("results[0] should succeed")
+	}
+	if results[1].Success {
+		t.Fatal("results[1] should fail")
+	}
+	if results[1].Error == "" {
+		t.Fatal("results[1] should have error message")
+	}
+	if !results[2].Success {
+		t.Fatal("results[2] should succeed")
+	}
+}
+
+func TestProcessBatchSequentialCompat(t *testing.T) {
+	var delays []time.Duration
+	svc := &Service{
+		Collector: fakeCollector{},
+		Validator: fakeValidator{},
+		Cache:     &memCache{},
+		Writer:    &fakeWriter{},
+		Sleep:     func(d time.Duration) { delays = append(delays, d) },
+	}
+
+	file := filepath.Join(t.TempDir(), "batch.txt")
+	if err := os.WriteFile(file, []byte("A\nB\nC\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	// workers=0 should fall back to sequential.
+	results, err := svc.ProcessBatch(context.Background(), domain.BookQuery{
+		BatchPath: file,
+		Workers:   0,
+	})
+	if err != nil {
+		t.Fatalf("batch: %v", err)
+	}
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results, got %d", len(results))
+	}
+	// Sequential mode should have inter-item sleeps.
+	if len(delays) != 2 {
+		t.Fatalf("expected 2 inter-item sleeps for sequential, got %d", len(delays))
+	}
+}

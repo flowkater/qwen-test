@@ -25,6 +25,7 @@ type BookQuery struct {
 	Lecture      bool
 	URL          string
 	QualityRetry bool
+	Workers      int
 }
 
 func (q BookQuery) Mode() string {
